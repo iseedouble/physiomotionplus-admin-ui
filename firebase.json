@@ -1,0 +1,16 @@
+{
+  "hosting": [
+    {
+      "target": "dev",
+      "public": "dist/physiomotionplus-admin-ui/browser",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    },
+    {
+      "target": "prod",
+      "public": "dist/physiomotionplus-admin-ui/browser",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    }
+  ]
+}

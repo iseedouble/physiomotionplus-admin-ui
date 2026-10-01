@@ -1,0 +1,47 @@
+name: Deploy Physiomotion Admin UI (Prod)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: physio-admin-ui-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Configure API endpoint for this environment
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const apiBaseUrl = process.env.API_BASE_URL?.trim().replace(/\/+$/, '');
+          if (!apiBaseUrl?.startsWith('https://')) throw new Error('Set prod API_BASE_URL to the deployed admin API URL.');
+          fs.writeFileSync('src/environments/environment.production.ts', `export const environment = { production: true, apiBaseUrl: ${JSON.stringify(apiBaseUrl)} };\n`);
+          NODE
+      - run: npm run build
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Deploy Firebase Hosting prod site
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: npx --yes firebase-tools@14 deploy --only hosting:prod --project "$FIREBASE_PROJECT_ID" --non-interactive

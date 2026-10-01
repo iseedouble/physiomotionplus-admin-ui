@@ -1,0 +1,101 @@
+<div class="mb-8 flex flex-wrap items-end justify-between gap-5">
+ <div><p class="eyebrow mb-3">{{s.t('THOUGHTFUL CARE, EVERY DAY','DES SOINS ATTENTIFS, CHAQUE JOUR')}}</p>
+ <h1 class="text-3xl font-medium tracking-tight sm:text-4xl">{{section==='modules'?s.t('A clear path to progress.','Un parcours clair vers le progrès.'):section==='clients'?s.t('Your clients, well supported.','Vos clients, bien accompagnés.'):s.t('Keep the conversation going.','Poursuivez la conversation.')}}</h1>
+ <p class="mt-3 text-sm text-muted">{{section==='modules'?s.t('Build rehab modules with exercises that move together.','Créez des modules avec des exercices organisés en progression.'):section==='clients'?s.t('Manage module assignments and stay connected.','Gérez les modules attribués et gardez le contact.'):s.t('A dedicated conversation for every client.','Une conversation dédiée à chaque client.')}}</p></div>
+@if(section==='modules'){<button pButton type="button" [disabled]="loading()" (click)="openModule()"><i class="pi pi-plus"></i><span pButtonLabel>{{s.t('New module','Nouveau module')}}</span></button>}
+</div>
+<p role="status" class="mb-6 rounded-xl border border-line bg-white p-4 text-sm text-muted">{{s.t('Modules, exercises, and videos are saved through the backend. Clients and messaging are not connected yet.','Les modules, exercices et vidéos sont enregistrés via le serveur. Les clients et la messagerie ne sont pas encore connectés.')}}</p>
+<section class="surface mb-8 flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
+  <div><p class="text-sm font-semibold">{{s.t('Protected admin API','API admin protégée')}}</p><p class="mt-1 text-xs text-muted">{{s.t('Verify this physio Firebase session with Spring Security.','Vérifiez cette session Firebase avec Spring Security.')}}</p>
+    @if(apiResult(); as result){<p class="mt-2 text-xs font-medium text-sage">{{result.message}} · {{result.email}}</p>}
+    @if(apiError()){<p role="alert" class="mt-2 text-xs text-red-700">{{apiError()}}</p>}
+  </div>
+  <button pButton type="button" [loading]="apiBusy()" [disabled]="apiBusy()" (click)="testApi()"><i class="pi pi-lock-open"></i><span pButtonLabel>{{s.t('Test admin API','Tester l’API admin')}}</span></button>
+</section>
+
+@if(section==='modules'){
+ @if(loading()){<p role="status" class="mb-4">{{s.t('Loading modules…','Chargement des modules…')}}</p>}
+ @if(dataError()){<div role="alert" class="mb-4 text-red-700">{{dataError()}} <button pButton text type="button" (click)="loadModules()">{{s.t('Reload modules','Recharger les modules')}}</button></div>}
+ <section class="surface mb-6 p-5">
+  <div class="flex flex-wrap items-center justify-between gap-3"><h2 class="font-semibold">{{s.t('Video library','Vidéothèque')}}</h2></div>
+  <div class="mt-4 space-y-2">@for(video of videos();track video.exerciseId){<button pButton text type="button" class="w-full justify-between text-left" (click)="openLibraryVideo(video)"><span class="break-all">{{video.filename}}</span><span class="text-xs">{{video.exerciseId}}</span></button>} @empty {<p class="text-sm text-muted">{{s.t('No videos loaded.','Aucune vidéo chargée.')}}</p>}</div>
+ </section>
+ @if(videosLoadError()){<div role="alert" class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"><span>{{videosLoadError()}}</span><button pButton text type="button" (click)="loadVideos()">{{s.t('Retry','Réessayer')}}</button></div>}
+ <section class="mb-8 grid gap-4 sm:grid-cols-3">
+  <div class="surface flex items-center gap-4 p-5"><span class="flex size-11 items-center justify-center rounded-xl bg-[#eaf0e3]"><i class="pi pi-th-large"></i></span><div><p class="text-2xl font-medium">{{s.modules().length}}</p><p class="text-xs text-muted">{{s.t('Rehab modules','Modules de réadaptation')}}</p></div></div>
+  <div class="surface flex items-center gap-4 p-5"><span class="flex size-11 items-center justify-center rounded-xl bg-[#f5efdf]"><i class="pi pi-play-circle"></i></span><div><p class="text-2xl font-medium">{{totalExercises()}}</p><p class="text-xs text-muted">{{s.t('Ordered exercises','Exercices en progression')}}</p></div></div>
+  <div class="surface flex items-center gap-4 p-5"><span class="flex size-11 items-center justify-center rounded-xl bg-[#eaf0e3]"><i class="pi pi-check-circle"></i></span><div><p class="text-2xl font-medium">{{published()}}</p><p class="text-xs text-muted">{{s.t('Published','Publiés')}}</p></div></div>
+ </section>
+ <div class="mb-6 flex flex-wrap items-center justify-between gap-4"><div class="flex gap-1 rounded-xl border border-line bg-white p-1">@for(f of ['All','Published','Draft'];track f){<button pButton text type="button" [class.bg-canvas]="filter()===f" [attr.aria-pressed]="filter()===f" (click)="filter.set(f)">{{f==='All'?s.t('All modules','Tous les modules'):status(f)}}</button>}</div><input pInputText class="w-full sm:w-64" [ngModel]="search()" (ngModelChange)="search.set($event)" [placeholder]="s.t('Search modules…','Rechercher des modules…')" [attr.aria-label]="s.t('Search modules','Rechercher des modules')"/></div>
+ <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+ @for(m of modules();track m.id){
+  <article class="surface overflow-hidden">
+   <div class="relative flex h-40 items-center justify-center overflow-hidden bg-[#e9ece1]" [class.bg-[#efe7de]]="m.area==='Shoulder'" [class.bg-[#e1e9e5]]="m.area==='Back'">
+    <div class="absolute -right-8 -bottom-14 size-52 rounded-full border border-forest/10"></div><div class="absolute -left-10 -top-16 size-44 rounded-full border border-forest/10"></div>
+    <i [class]="'pi '+(m.area==='Ankle'?'pi-compass':m.area==='Shoulder'?'pi-arrows-alt':'pi-wave-pulse')+' text-5xl text-forest/60'" aria-hidden="true"></i>
+    <span class="absolute top-4 left-4 rounded-full bg-white/80 px-3 py-1 text-[10px] font-semibold">{{areaLabel(m.area)}}</span>
+    <span class="absolute top-4 right-4 rounded-full bg-white/80 px-3 py-1 text-[10px]">{{status(m.status)}}</span>
+   </div>
+   <div class="p-5"><h2 class="text-lg font-semibold">{{m.name}}</h2><p class="mt-2 text-sm text-muted">{{m.exercises.length}} {{s.t('exercises · Step-by-step progression','exercices · Progression étape par étape')}}</p><div class="mt-6 flex items-center justify-between border-t border-line pt-4"><button pButton text type="button" (click)="openDetail(m)">{{s.t('Manage exercises','Gérer les exercices')}} <i class="pi pi-arrow-right text-xs"></i></button><button pButton text rounded type="button" icon="pi pi-pencil" [attr.aria-label]="s.t('Edit ','Modifier ')+m.name" (click)="openModule(m)"></button></div></div>
+  </article>
+ } @empty {<div class="surface col-span-full p-12 text-center text-muted">{{s.t('No modules to display.','Aucun module à afficher.')}}</div>}
+ </div>
+ <p class="mt-6 text-xs text-muted">{{s.t('Module and exercise changes are saved to Firestore. Removed exercise videos remain in the video library until explicitly deleted.','Les modules et exercices sont enregistrés dans Firestore. Les vidéos restent dans la vidéothèque jusqu’à leur suppression explicite.')}}</p>
+}
+@if(section==='clients'){
+ <input pInputText class="mb-6 w-full sm:w-80" [ngModel]="search()" (ngModelChange)="search.set($event)" [placeholder]="s.t('Find a client…','Rechercher un client…')" [attr.aria-label]="s.t('Search clients','Rechercher des clients')"/>
+ <div class="grid items-start gap-6 xl:grid-cols-[1.5fr_1fr]">
+  <section class="surface overflow-hidden"><div class="border-b border-line p-5"><h2 class="font-semibold">{{s.t('Client directory','Répertoire des clients')}} <span class="ml-2 text-sm font-normal text-muted">{{clients().length}}</span></h2></div>
+   @for(c of clients();track c.id){<button type="button" class="flex w-full items-center gap-4 border-b border-line p-5 text-left hover:bg-canvas" [class.bg-[#f1f4e9]]="clientId()===c.id" [attr.aria-pressed]="clientId()===c.id" (click)="chooseClient(c.id)"><span class="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#efe7de] text-sm">{{c.initials}}</span><span class="min-w-0 flex-1"><span class="block font-medium">{{c.name}}</span><span class="block truncate text-xs text-muted">{{c.email}}</span></span><span class="text-xs text-muted">{{c.moduleIds.length}} {{s.t('modules','modules')}}</span><i class="pi pi-chevron-right text-xs"></i></button>}@empty{<p class="p-8 text-muted">{{s.t('No clients found.','Aucun client trouvé.')}}</p>}
+  </section>
+  @if(client(); as activeClient){<section class="surface p-6"><p class="eyebrow">{{s.t('CLIENT PROFILE','PROFIL CLIENT')}}</p><h2 class="mt-4 text-2xl font-medium">{{activeClient.name}}</h2><p class="mt-2 text-sm text-muted">{{activeClient.email}}</p><button pButton outlined class="mt-5" type="button" (click)="messageClient(activeClient.id)"><i class="pi pi-comments"></i>{{s.t('Open conversation','Ouvrir la conversation')}}</button><h3 class="mt-8 font-semibold">{{s.t('Assigned modules','Modules attribués')}}</h3><p class="mt-2 text-xs leading-5 text-muted">{{s.t('Select published modules for this client. Changes are session-only.','Sélectionnez les modules publiés pour ce client. Les changements sont limités à cette session.')}}</p><div class="mt-4 space-y-2">@for(m of s.modules();track m.id){@if(m.status==='Published'||activeClient.moduleIds.includes(m.id)){<button pButton outlined type="button" class="w-full justify-between text-left" [attr.aria-pressed]="activeClient.moduleIds.includes(m.id)" (click)="toggleAssignment(m.id)"><span>{{m.name}}</span><i [class]="'pi '+(activeClient.moduleIds.includes(m.id)?'pi-check-circle':'pi-plus')"></i></button>}}</div></section>
+  } @else {<section class="surface p-8 text-center text-muted">{{s.t('No client selected.','Aucun client sélectionné.')}}</section>}
+ </div>
+}
+@if(section==='messages'){
+ <section class="surface grid min-h-[550px] overflow-hidden md:grid-cols-[280px_1fr]">
+  <div class="border-b border-line md:border-r md:border-b-0"><p class="eyebrow border-b border-line p-5">{{s.t('CONVERSATIONS','CONVERSATIONS')}}</p>@for(c of s.clients();track c.id){<button type="button" class="flex w-full gap-3 border-b border-line p-5 text-left hover:bg-canvas" [class.bg-[#f1f4e9]]="clientId()===c.id" [attr.aria-pressed]="clientId()===c.id" (click)="chooseClient(c.id)"><span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#efe7de] text-xs">{{c.initials}}</span><span class="min-w-0"><span class="block text-sm font-semibold">{{c.name}}</span><span class="mt-1 block truncate text-xs text-muted">{{latest(c.id)}}</span></span></button>}</div>
+  @if(client(); as activeClient){<div class="flex min-w-0 flex-col"><div class="flex items-center justify-between gap-4 border-b border-line p-5"><div><h2 class="font-semibold">{{activeClient.name}}</h2><p class="mt-1 text-xs text-muted">{{s.t('Private conversation','Conversation privée')}}</p></div><i class="pi pi-lock text-sage"></i></div>
+   <div class="flex max-h-[460px] min-h-64 flex-1 flex-col gap-5 overflow-y-auto p-6" role="log" aria-live="polite">
+    @for(m of conversation();track m.id){<div class="flex" [class.justify-end]="m.from==='physio'"><div class="max-w-[85%]"><p class="mb-2 text-[10px] text-muted">{{m.from==='physio'?s.t('You','Vous'):activeClient.name}}</p><p class="whitespace-pre-wrap break-words rounded-2xl bg-canvas px-4 py-3 text-sm leading-6" [class.bg-forest]="m.from==='physio'" [class.text-white]="m.from==='physio'">{{m.body}}</p></div></div>}@empty{<p class="my-auto text-center text-sm text-muted">{{s.t('No messages yet.','Aucun message pour le moment.')}}</p>}
+   </div>
+   <p class="mt-auto border-t border-line p-5 text-sm text-muted">{{s.t('Messaging is not connected yet.','La messagerie n’est pas encore connectée.')}}</p>
+  </div>} @else {<div class="flex items-center justify-center p-8 text-center text-muted">{{s.t('No conversations yet.','Aucune conversation pour le moment.')}}</div>}
+ </section>
+}
+<p-dialog [header]="s.t('Module details','Détails du module')" [visible]="editor()" (visibleChange)="editor.set($event)" [modal]="true" [style]="{width:'480px',maxWidth:'95vw'}">
+ @if(dataError()){<p role="alert" class="mb-3 text-red-700">{{dataError()}}</p>}
+ <form class="space-y-5 pt-2" (ngSubmit)="saveModule()"><label class="field">{{s.t('Module name','Nom du module')}}<input pInputText name="name" required maxlength="100" [ngModel]="draft().name" (ngModelChange)="updateDraft('name',$event)"/></label><label class="field">{{s.t('Module description','Description du module')}}<textarea pTextarea name="moduleDescription" rows="4" maxlength="2000" [ngModel]="draft().description" (ngModelChange)="updateDraft('description',$event)" [placeholder]="s.t('Describe the goal and focus of this rehabilitation module.','Décrivez l’objectif et le contenu de ce module de réadaptation.')"></textarea></label><label class="field">{{s.t('Body area','Région du corps')}}<p-select name="area" [options]="areaOptions()" optionLabel="label" optionValue="value" [ngModel]="draft().area" (ngModelChange)="updateDraft('area',$event)" appendTo="body"/></label><p class="text-xs text-muted">{{s.t('New modules begin as drafts. Add exercises before publishing.','Les nouveaux modules sont des brouillons. Ajoutez des exercices avant de publier.')}}</p><div class="flex justify-end gap-2"><button pButton text type="button" (click)="editor.set(false)">{{s.t('Cancel','Annuler')}}</button><button pButton type="submit" [disabled]="saving() || loading() || !draft().name.trim()" [loading]="saving()">{{s.t('Save module','Enregistrer')}}</button></div></form>
+</p-dialog>
+<p-dialog [header]="current()?.name || ''" [visible]="detailOpen()" (visibleChange)="detailOpen.set($event)" [modal]="true" [style]="{width:'760px',maxWidth:'95vw'}">
+ @if(current();as m){<div class="mb-6 flex flex-wrap items-center justify-between gap-3"><span class="rounded-full bg-canvas px-3 py-2 text-xs">{{status(m.status)}} · {{m.exercises.length}} {{s.t('exercises','exercices')}}</span><button pButton outlined type="button" (click)="togglePublish()">{{m.status==='Draft'?s.t('Publish','Publier'):s.t('Move to draft','Passer en brouillon')}}</button></div>
+ <p class="mb-5 text-sm text-muted">{{s.t('Arrange the exercises in the order clients will follow.','Organisez les exercices dans l’ordre à suivre par les clients.')}}</p>
+ @if(notice()){<p role="alert" class="mb-4 text-sm text-amber-800">{{notice()}}</p>}
+ <div class="space-y-3">@for(e of m.exercises;track e.id;let i=$index){<article class="flex flex-wrap items-center gap-3 rounded-xl border border-line p-4"><span class="flex size-9 items-center justify-center rounded-full bg-[#eaf0e3] text-sm">{{i+1}}</span><div class="min-w-0 flex-1"><h3 class="font-medium">{{e.name}}</h3><p class="mt-1 text-xs text-muted">{{e.clientExerciseId && videos().some(v=>v.exerciseId===e.clientExerciseId)?s.t('Private video ready','Vidéo privée prête'):s.t('Video to add','Vidéo à ajouter')}}</p></div><div class="flex"><button pButton text rounded type="button" icon="pi pi-arrow-up" [disabled]="i===0" [attr.aria-label]="s.t('Move up','Monter')" (click)="move(i,-1)"></button><button pButton text rounded type="button" icon="pi pi-arrow-down" [disabled]="i===m.exercises.length-1" [attr.aria-label]="s.t('Move down','Descendre')" (click)="move(i,1)"></button><button pButton text rounded type="button" icon="pi pi-pencil" [attr.aria-label]="s.t('Edit exercise','Modifier l’exercice')" (click)="openExercise(e)"></button><button pButton text rounded severity="danger" type="button" icon="pi pi-trash" [attr.aria-label]="s.t('Remove exercise','Retirer l’exercice')" (click)="removeExercise(e.id)"></button></div></article>}@empty{<p class="rounded-xl bg-canvas p-8 text-center text-muted">{{s.t('Add the first exercise to this module.','Ajoutez le premier exercice au module.')}}</p>}</div>
+ <button pButton class="mt-6" type="button" (click)="openExercise()"><i class="pi pi-plus"></i>{{s.t('Add exercise','Ajouter un exercice')}}</button>}
+</p-dialog>
+<p-dialog [header]="s.t('Exercise details','Détails de l’exercice')" [visible]="exerciseEditor()" (visibleChange)="exerciseEditor.set($event)" [modal]="true" [style]="{width:'520px',maxWidth:'95vw'}">
+ <div class="space-y-5 pt-2">
+  @if(dataError()){<p role="alert" class="text-red-700">{{dataError()}}</p>}
+  @if(!libraryMode()){<form class="space-y-5" (ngSubmit)="saveExercise()">
+   <label class="field">{{s.t('Exercise name','Nom de l’exercice')}}<input pInputText name="exerciseName" required maxlength="100" [ngModel]="exerciseDraft().name" (ngModelChange)="updateExercise('name',$event)"/></label>
+   <label class="field">{{s.t('Instructions','Consignes')}}<textarea pTextarea name="description" rows="4" maxlength="5000" [ngModel]="exerciseDraft().description" (ngModelChange)="updateExercise('description',$event)"></textarea></label>
+   <p class="text-xs text-muted">{{s.t('The exercise ID and video link are managed automatically.','L’identifiant et le lien vidéo sont gérés automatiquement.')}}</p>
+   @if(videos().length){<label class="field">{{s.t('Use an uploaded video (optional)','Utiliser une vidéo existante (facultatif)')}}<p-select name="existingVideo" [options]="existingVideoOptions()" optionLabel="label" optionValue="value" [showClear]="true" [ngModel]="currentVideo()?.exerciseId" (ngModelChange)="linkVideo($event)" appendTo="body" [placeholder]="s.t('Upload a new video below','Téléverser une nouvelle vidéo ci-dessous')"/></label>}
+   <div class="flex justify-end gap-2"><button pButton text type="button" (click)="exerciseEditor.set(false)">{{s.t('Cancel','Annuler')}}</button><button pButton type="submit" [disabled]="saving() || videoBusy() || !exerciseDraft().name.trim()" [loading]="saving()">{{s.t('Save exercise','Enregistrer')}}</button></div>
+  </form>}
+  @if(exerciseDraft().clientExerciseId){
+   <section class="space-y-3 border-t border-line pt-5" aria-labelledby="video-heading">
+    <h3 id="video-heading" class="font-semibold">{{s.t('Private video','Vidéo privée')}}</h3>
+    @if(currentVideo();as video){<p class="text-sm text-muted"><i class="pi pi-check-circle mr-2 text-sage" aria-hidden="true"></i>{{video.filename}} · {{(video.size/1024/1024).toFixed(1)}} MB</p>}
+    @else{<p class="text-sm text-muted">{{s.t('No video uploaded for this exercise.','Aucune vidéo téléversée pour cet exercice.')}}</p>}
+    <label class="block text-sm font-medium" for="exercise-video">{{s.t('Choose MP4 or WebM, up to 250 MB','Choisir MP4 ou WebM, jusqu’à 250 Mo')}}</label>
+    <input id="exercise-video" type="file" accept="video/mp4,video/webm,.mp4,.webm" class="block w-full rounded-lg border border-line bg-white p-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-canvas file:px-3 file:py-2" (change)="onVideoPicked($event)"/>
+    <div class="flex flex-wrap gap-2"><button pButton type="button" [loading]="videoBusy()" [disabled]="saving() || videoBusy() || !videoFile() || (!libraryMode() && !exerciseDraft().name.trim())" (click)="uploadVideo()">{{currentVideo()?s.t('Replace video','Remplacer la vidéo'):s.t('Upload video','Téléverser la vidéo')}}</button>
+    @if(currentVideo()){<button pButton outlined severity="danger" type="button" [disabled]="videoBusy()" (click)="deleteVideo()">{{deletePending()?s.t('Confirm delete','Confirmer la suppression'):s.t('Delete video','Supprimer la vidéo')}}</button>}</div>
+    @if(videoError()){<p role="alert" class="text-sm text-red-700">{{videoError()}}</p>}
+    @if(videoNotice()){<p role="status" class="text-sm text-sage">{{videoNotice()}}</p>}
+   </section>
+  }
+ </div>
+</p-dialog>

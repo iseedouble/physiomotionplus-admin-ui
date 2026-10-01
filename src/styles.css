@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import 'primeicons/primeicons.css';
+@theme { --font-sans:'DM Sans','Segoe UI',sans-serif; --color-forest:#243f32; --color-sage:#658065; --color-lime:#d9edb4; --color-canvas:#f8f9f5; --color-line:#e8ebe3; --color-muted:#737a70; }
+@layer base { body {@apply m-0 bg-canvas font-sans text-forest;} button,a { @apply touch-manipulation; } :focus-visible {outline:2px solid #658065;outline-offset:4px;} }
+@layer components { .surface {@apply rounded-2xl border border-line bg-white;} .eyebrow {@apply text-[10px] font-semibold tracking-[2px] uppercase text-sage;} .field {@apply flex flex-col gap-2 text-sm;} }
+

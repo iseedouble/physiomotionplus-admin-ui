@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "default": "physiomotionplusapp-admin"
+  },
+  "targets": {
+    "physiomotionplusapp-admin": {
+      "hosting": {
+        "dev": ["physiomotionplusapp-admin-dev"],
+        "prod": ["physiomotionplusapp-admin"]
+      }
+    }
+  }
+}
