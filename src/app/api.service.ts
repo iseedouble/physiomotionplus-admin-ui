@@ -6,6 +6,7 @@ import { environment } from '../environments/environment';
 
 export interface AdminJwtTestResponse { success: boolean; message: string; uid: string; email: string; }
 export interface AdminVideo { exerciseId: string; filename: string; contentType: string; size: number; uploadedAt: string; }
+export interface VideoPlaybackLink { url: string; expiresAt: string; contentType: string; }
 
 @Injectable({ providedIn: 'root' })
 export class AdminApiService {
@@ -49,6 +50,14 @@ export class AdminApiService {
     const response = await fetch(this.apiUrl + '/api/admin/videos', { headers: await this.authHeaders() });
     if (!response.ok) throw this.videoError(response, 'Could not load videos');
     return response.json() as Promise<AdminVideo[]>;
+  }
+
+  async getVideoPlaybackLink(exerciseId: string, signal: AbortSignal): Promise<VideoPlaybackLink> {
+    const response = await fetch(this.apiUrl + '/api/admin/videos/' + encodeURIComponent(exerciseId) + '/preview', {
+      headers: await this.authHeaders(), cache: 'no-store', signal,
+    });
+    if (!response.ok) throw this.videoError(response, 'Could not load video preview');
+    return response.json() as Promise<VideoPlaybackLink>;
   }
 
   async uploadVideo(exerciseId: string, file: File): Promise<AdminVideo> {

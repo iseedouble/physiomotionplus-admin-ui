@@ -8,8 +8,9 @@ import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { Store, RehabModule, Exercise } from './store';
 import { AdminApiService, AdminJwtTestResponse, AdminVideo } from './api.service';
+import { VideoPreview, VideoPreviewSelection } from './video-preview';
 
-@Component({selector:'app-workspace',imports:[FormsModule,ButtonModule,InputTextModule,TextareaModule,DialogModule,SelectModule],templateUrl:'./workspace.html',changeDetection:ChangeDetectionStrategy.OnPush})
+@Component({selector:'app-workspace',imports:[FormsModule,ButtonModule,InputTextModule,TextareaModule,DialogModule,SelectModule,VideoPreview],templateUrl:'./workspace.html',changeDetection:ChangeDetectionStrategy.OnPush})
 export class Workspace {
  readonly s=inject(Store);
  readonly api=inject(AdminApiService);
@@ -41,6 +42,9 @@ export class Workspace {
  readonly videoError=signal('');
  readonly videoNotice=signal('');
  readonly videoFile=signal<File|null>(null);
+ readonly preview=signal<VideoPreviewSelection|null>(null);
+ previewVideo(video:AdminVideo){this.preview.set({exerciseId:video.exerciseId,name:video.filename,description:''});}
+ previewExercise(exercise:Exercise){this.preview.set({exerciseId:exercise.clientExerciseId||exercise.id,name:exercise.name,description:exercise.description});}
  readonly deletePending=signal(false);
  readonly currentVideo=computed(()=>this.videos().find(video=>video.exerciseId===this.exerciseDraft().clientExerciseId));
  readonly existingVideoOptions=computed(()=>this.videos().map(video=>({label:video.filename+' · '+video.exerciseId,value:video.exerciseId})));
