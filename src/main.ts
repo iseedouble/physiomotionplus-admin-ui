@@ -10,6 +10,7 @@ bootstrapApplication(App,{providers:[provideRouter([
  {path:'',pathMatch:'full',redirectTo:'modules'},
  {path:'modules/:moduleId/exercises',component:Workspace,data:{section:'exercises'}},
  {path:'modules',component:Workspace,data:{section:'modules'}},
+ {path:'videos',component:Workspace,data:{section:'videos'}},
  {path:'clients',component:Workspace,data:{section:'clients'}},
  {path:'messages',component:Workspace,data:{section:'messages'}},
  {path:'**',redirectTo:'modules'}

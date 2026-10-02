@@ -34,5 +34,5 @@ export class App {
  readonly auth=inject(AdminAuthService);
  readonly displayName=computed(()=>this.auth.user()?.displayName || this.auth.user()?.email || this.s.t('Administrator','Administrateur'));
  readonly initials=computed(()=>this.displayName().split(/[\s@]+/).filter(Boolean).slice(0,2).map(part=>part[0]).join('').toUpperCase());
- readonly nav=[{path:'/modules',en:'Rehab modules',fr:'Modules de réadaptation',icon:'pi-th-large'},{path:'/clients',en:'Clients',fr:'Clients',icon:'pi-users'},{path:'/messages',en:'Private messages',fr:'Messages privés',icon:'pi-comments'}];
+ readonly nav=[{path:'/modules',en:'Rehab modules',fr:'Modules de réadaptation',icon:'pi-th-large'},{path:'/videos',en:'Video library',fr:'Vidéothèque',icon:'pi-video'},{path:'/clients',en:'Clients',fr:'Clients',icon:'pi-users'},{path:'/messages',en:'Private messages',fr:'Messages privés',icon:'pi-comments'}];
 }

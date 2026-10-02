@@ -1,4 +1,5 @@
-@if(section!=='exercises'){
+@if(section==='videos'){<app-video-library [videos]="videos()" [loading]="videosLoading()" [error]="videosLoadError()" (reload)="loadVideos()" (preview)="previewVideo($event)" (manage)="openLibraryVideo($event)"/>}
+@if(section!=='exercises' && section!=='videos'){
 <div class="mb-8 flex flex-wrap items-end justify-between gap-5">
  <div><p class="eyebrow mb-3">{{s.t('THOUGHTFUL CARE, EVERY DAY','DES SOINS ATTENTIFS, CHAQUE JOUR')}}</p>
  <h1 class="text-3xl font-medium tracking-tight sm:text-4xl">{{section==='modules'?s.t('A clear path to progress.','Un parcours clair vers le progrès.'):section==='clients'?s.t('Your clients, well supported.','Vos clients, bien accompagnés.'):s.t('Keep the conversation going.','Poursuivez la conversation.')}}</h1>
@@ -6,27 +7,12 @@
 @if(section==='modules'){<button pButton type="button" [disabled]="loading()" (click)="openModule()"><i class="pi pi-plus"></i><span pButtonLabel>{{s.t('New module','Nouveau module')}}</span></button>}
 </div>
 <p role="status" class="mb-6 rounded-xl border border-line bg-white p-4 text-sm text-muted">{{s.t('Modules, exercises, and videos are saved through the backend. Clients and messaging are not connected yet.','Les modules, exercices et vidéos sont enregistrés via le serveur. Les clients et la messagerie ne sont pas encore connectés.')}}</p>
-<section class="surface mb-8 flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
-  <div><p class="text-sm font-semibold">{{s.t('Protected admin API','API admin protégée')}}</p><p class="mt-1 text-xs text-muted">{{s.t('Verify this physio Firebase session with Spring Security.','Vérifiez cette session Firebase avec Spring Security.')}}</p>
-    @if(apiResult(); as result){<p class="mt-2 text-xs font-medium text-sage">{{result.message}} · {{result.email}}</p>}
-    @if(apiError()){<p role="alert" class="mt-2 text-xs text-red-700">{{apiError()}}</p>}
-  </div>
-  <button pButton type="button" [loading]="apiBusy()" [disabled]="apiBusy()" (click)="testApi()"><i class="pi pi-lock-open"></i><span pButtonLabel>{{s.t('Test admin API','Tester l’API admin')}}</span></button>
-</section>
+
 
 }
 
 @if(section==='modules'){
  @if(dataError()){<div role="alert" class="mb-4 text-red-700">{{dataError()}} <button pButton text type="button" (click)="loadModules()">{{s.t('Reload modules','Recharger les modules')}}</button></div>}
- <section class="surface mb-6 p-5" [attr.aria-busy]="videosLoading()">
-  <div class="flex flex-wrap items-center justify-between gap-3"><h2 class="font-semibold">{{s.t('Video library','Vidéothèque')}}</h2></div>
-  @if(videosLoading()){
-   <app-loading-state [label]="s.t('Loading videos…','Chargement des vidéos…')"/>
-  } @else {
-  <div class="mt-4 space-y-2">@for(video of videos();track video.exerciseId){<div class="flex flex-wrap items-center gap-2"><button pButton text type="button" class="min-w-0 flex-1 justify-between text-left" (click)="openLibraryVideo(video)"><span class="break-all">{{video.filename}}</span><span class="text-xs">{{video.exerciseId}}</span></button><button pButton outlined type="button" icon="pi pi-play" (click)="previewVideo(video)">{{s.t('Preview','Aperçu')}}</button></div>} @empty {@if(!videosLoadError()){<p class="text-sm text-muted">{{s.t('No videos loaded.','Aucune vidéo chargée.')}}</p>}}</div>
-  }
- </section>
- @if(videosLoadError()){<div role="alert" class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"><span>{{videosLoadError()}}</span><button pButton text type="button" (click)="loadVideos()">{{s.t('Retry','Réessayer')}}</button></div>}
  @if(loading()){
   <div class="surface mb-8 flex min-h-80 items-center justify-center" aria-busy="true">
    <app-loading-state [label]="s.t('Loading modules…','Chargement des modules…')"/>

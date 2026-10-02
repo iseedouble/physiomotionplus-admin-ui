@@ -7,11 +7,12 @@ import { TextareaModule } from 'primeng/textarea';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { Store, RehabModule, Exercise } from './store';
-import { AdminApiService, AdminJwtTestResponse, AdminVideo } from './api.service';
+import { AdminApiService, AdminVideo } from './api.service';
 import { VideoPreview, VideoPreviewSelection } from './video-preview';
 import { LoadingState } from './loading-state';
+import { VideoLibrary } from './video-library';
 
-@Component({selector:'app-workspace',imports:[FormsModule,RouterLink,ButtonModule,InputTextModule,TextareaModule,DialogModule,SelectModule,VideoPreview,LoadingState],templateUrl:'./workspace.html',changeDetection:ChangeDetectionStrategy.OnPush})
+@Component({selector:'app-workspace',imports:[FormsModule,RouterLink,ButtonModule,InputTextModule,TextareaModule,DialogModule,SelectModule,VideoPreview,LoadingState,VideoLibrary],templateUrl:'./workspace.html',changeDetection:ChangeDetectionStrategy.OnPush})
 export class Workspace {
  readonly s=inject(Store);
  readonly api=inject(AdminApiService);
@@ -54,9 +55,6 @@ export class Workspace {
  linkVideo(id:string|null){this.exerciseDraft.update(e=>({...e,clientExerciseId:id||e.id}));this.videoFile.set(null);this.deletePending.set(false);}
  readonly reply=signal('');
  readonly notice=signal('');
- readonly apiBusy=signal(false);
- readonly apiResult=signal<AdminJwtTestResponse|null>(null);
- readonly apiError=signal('');
  readonly areaOptions=computed(()=>[{label:this.s.t('Ankle','Cheville'),value:'Ankle'},{label:this.s.t('Shoulder','Épaule'),value:'Shoulder'},{label:this.s.t('Back','Dos'),value:'Back'},{label:this.s.t('Knee','Genou'),value:'Knee'}]);
  areaLabel(area:string){return this.areaOptions().find(a=>a.value===area)?.label || area;}
  status(status:string){return status==='Published'?this.s.t('Published','Publié'):this.s.t('Draft','Brouillon');}
@@ -64,7 +62,7 @@ export class Workspace {
  updateDraft(field:'name'|'description'|'area',value:string){this.draft.update(d=>({...d,[field]:value}));}
  async saveModule(){if(!this.draft().name.trim())return;const saved=await this.persist(this.draft());if(saved){this.selected.set(saved.id);this.editor.set(false);}}
  async togglePublish(){const m=this.current();if(!m)return;if(!m.exercises.length){this.notice.set(this.s.t('Add an exercise before publishing.','Ajoutez un exercice avant de publier.'));return;}await this.persist({...m,status:m.status==='Draft'?'Published':'Draft'});}
- constructor(){void this.loadModules();if(this.section==='modules'||this.section==='exercises')void this.loadVideos();}
+ constructor(){if(this.section!=='videos')void this.loadModules();if(this.section==='videos'||this.section==='exercises')void this.loadVideos();}
  async loadModules(){if(this.loading())return;this.loading.set(true);this.dataError.set('');try{this.s.modules.set(await this.api.listModules());}catch(error){this.dataError.set(error instanceof Error?error.message:'Could not load modules.');}finally{this.loading.set(false);}}
  private async persist(module:RehabModule):Promise<RehabModule|null>{
   if(this.saving()||this.loading())return null;
@@ -89,7 +87,6 @@ export class Workspace {
  messageClient(id:number){this.router.navigate(['/messages'],{queryParams:{client:id}});}
  chooseClient(id:number){this.clientId.set(id);this.reply.set('');}
  latest(id:number){return this.s.messages().filter(m=>m.clientId===id).at(-1)?.body || this.s.t('No messages yet','Aucun message');}
- async testApi(){this.apiBusy.set(true);this.apiError.set('');try{this.apiResult.set(await this.api.testProtectedEndpoint());}catch(error){this.apiResult.set(null);this.apiError.set(error instanceof Error?error.message:this.s.t('Admin API request failed.','La requête API admin a échoué.'));}finally{this.apiBusy.set(false);}}
  async loadVideos(){if(this.videosLoading())return;this.videosLoading.set(true);this.videosLoadError.set('');try{this.videos.set(await this.api.listVideos());}catch(error){this.videosLoadError.set(error instanceof Error?error.message:'Could not load videos.');}finally{this.videosLoading.set(false);}}
  onVideoPicked(event:Event){const input=event.target as HTMLInputElement;const file=input.files?.[0]??null;this.videoError.set('');this.videoNotice.set('');if(file&&file.size>250*1024*1024){this.videoFile.set(null);this.videoError.set(this.s.t('Video exceeds 250 MB.','La vidéo dépasse 250 Mo.'));return;}this.videoFile.set(file);}
  async uploadVideo(){const exerciseId=this.exerciseDraft().clientExerciseId;const file=this.videoFile();if(!exerciseId||!file||this.videoBusy()||this.saving())return;if(!this.libraryMode()&&!await this.saveExercise(false))return;this.videoBusy.set(true);this.videoError.set('');this.videoNotice.set('');try{const uploaded=await this.api.uploadVideo(exerciseId,file);this.videos.update(videos=>[...videos.filter(video=>video.exerciseId!==exerciseId),uploaded]);this.videoFile.set(null);this.videoNotice.set(this.s.t('Video uploaded for this exercise ID.','Vidéo téléversée pour cet identifiant d’exercice.'));}catch(error){this.videoError.set(error instanceof Error?error.message:'Upload failed.');}finally{this.videoBusy.set(false);}}

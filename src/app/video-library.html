@@ -1,0 +1,38 @@
+<div class="mb-8 flex flex-wrap items-start justify-between gap-4">
+ <div><p class="eyebrow mb-3">{{s.t('YOUR MEDIA','VOS MÉDIAS')}}</p><h1 class="text-3xl font-medium tracking-tight sm:text-4xl">{{s.t('Video library','Vidéothèque')}}</h1><p class="mt-3 text-sm text-muted">{{s.t('Browse exercise folders and preview your private videos.','Parcourez les dossiers d’exercices et visionnez vos vidéos privées.')}}</p></div>
+ <button pButton outlined type="button" icon="pi pi-refresh" [disabled]="loading()" (click)="reload.emit()">{{s.t('Refresh','Actualiser')}}</button>
+</div>
+<section class="surface p-5 sm:p-6">
+ <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+  <nav [attr.aria-label]="s.t('Video folders','Dossiers vidéo')"><ol class="flex flex-wrap items-center gap-1">
+   <li><button pButton text type="button" (click)="openFolder('')" [attr.aria-current]="!path()?'location':null"><i class="pi pi-folder" aria-hidden="true"></i>{{s.t('Library','Vidéothèque')}}</button></li>
+   @for(crumb of breadcrumbs();track crumb.path){<li class="flex min-w-0 items-center gap-1"><i class="pi pi-chevron-right text-xs text-muted" aria-hidden="true"></i><button pButton text type="button" class="break-all text-left" [attr.aria-current]="path()===crumb.path?'location':null" (click)="openFolder(crumb.path)">{{crumb.label}}</button></li>}
+  </ol></nav>
+  <input pInputText class="w-full sm:w-72" [ngModel]="search()" (ngModelChange)="search.set($event)" [placeholder]="s.t('Search this folder…','Rechercher dans ce dossier…')" [attr.aria-label]="s.t('Search this folder and subfolders','Rechercher dans ce dossier et ses sous-dossiers')"/>
+ </div>
+ @if(error()){<div role="alert" class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{error()}}</div>}
+ @if(loading()){
+  <app-loading-state [label]="s.t('Loading videos…','Chargement des vidéos…')"/>
+ } @else {
+  @if(missingFolders()){<p class="mb-5 text-sm text-muted">{{s.t('Folder information is unavailable for some videos. These appear at the library root.','Les dossiers de certaines vidéos sont inconnus. Ces vidéos apparaissent à la racine de la vidéothèque.')}}</p>}
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+   @for(folder of contents().folders;track folder.path){
+    <button pButton outlined type="button" class="min-w-0 justify-start gap-4 rounded-xl p-5 text-left" (click)="openFolder(folder.path)">
+     <i class="pi pi-folder text-3xl text-sage" aria-hidden="true"></i><span class="min-w-0"><span class="block break-all font-semibold">{{folder.name}}</span><span class="mt-2 block text-xs text-muted">{{folder.count}} {{s.t('videos','vidéos')}}</span></span>
+    </button>
+   }
+   @for(video of contents().videos;track video.exerciseId){
+    <article class="min-w-0 overflow-hidden rounded-xl border border-line">
+     <button pButton text type="button" class="flex aspect-video w-full items-center justify-center rounded-none bg-canvas" [attr.aria-label]="s.t('Preview ','Visionner ')+video.filename" (click)="preview.emit(video)"><i class="pi pi-play-circle text-5xl text-sage" aria-hidden="true"></i></button>
+     <div class="p-4"><h2 class="break-words font-semibold">{{video.filename}}</h2><p class="mt-2 text-xs text-muted">{{(video.size/1024/1024).toFixed(1)}} MB · {{video.contentType==='video/webm'?'WebM':'MP4'}}</p><p class="mt-2 text-xs text-muted">{{video.uploadedAt | date:'yyyy-MM-dd'}}</p>
+      @if(search() && video.folderPath){<p class="mt-2 break-all text-xs text-muted">{{video.folderPath}}</p>}
+      <div class="mt-4 flex flex-wrap gap-2"><button pButton text type="button" (click)="preview.emit(video)">{{s.t('Preview','Aperçu')}}</button><button pButton outlined type="button" (click)="manage.emit(video)">{{s.t('Manage video','Gérer la vidéo')}}</button></div>
+     </div>
+    </article>
+   }
+  </div>
+  @if(!contents().folders.length && !contents().videos.length && !error()){
+   <p role="status" class="py-12 text-center text-muted">{{search()?s.t('No videos match your search.','Aucune vidéo ne correspond à votre recherche.'):s.t('This folder is empty.','Ce dossier est vide.')}}</p>
+  }
+ }
+</section>

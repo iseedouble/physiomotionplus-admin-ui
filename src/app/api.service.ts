@@ -4,8 +4,7 @@ import type { RehabModule } from './store';
 import { adminAuth } from './firebase';
 import { environment } from '../environments/environment';
 
-export interface AdminJwtTestResponse { success: boolean; message: string; uid: string; email: string; }
-export interface AdminVideo { exerciseId: string; filename: string; contentType: string; size: number; uploadedAt: string; }
+export interface AdminVideo { exerciseId: string; filename: string; contentType: string; size: number; uploadedAt: string; folderPath?: string; }
 export interface VideoPlaybackLink { url: string; expiresAt: string; contentType: string; }
 
 @Injectable({ providedIn: 'root' })
@@ -20,15 +19,6 @@ export class AdminApiService {
     if (!user) throw new Error('You must be signed in first.');
     return { Authorization: 'Bearer ' + await getIdToken(user) };
   }
-  async testProtectedEndpoint(): Promise<AdminJwtTestResponse> {
-    const user = adminAuth.currentUser;
-    if (!user) throw new Error('You must be signed in first.');
-    const token = await getIdToken(user, true);
-    const response = await fetch(this.apiUrl + '/api/admin/test', { headers: { Authorization: 'Bearer ' + token } });
-    if (!response.ok) throw new Error('Admin API returned ' + response.status);
-    return response.json() as Promise<AdminJwtTestResponse>;
-  }
-
   async listModules(): Promise<RehabModule[]> {
     const response = await fetch(this.apiUrl + '/api/admin/modules', {headers: await this.authHeaders(), cache: 'no-store'});
     if (!response.ok) throw new Error('Could not load modules (' + response.status + ')');
