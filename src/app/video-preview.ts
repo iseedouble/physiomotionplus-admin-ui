@@ -3,12 +3,13 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { AdminApiService } from './api.service';
 import { Store } from './store';
+import { LoadingState } from './loading-state';
 
 export interface VideoPreviewSelection { exerciseId: string; name: string; description: string; }
 
 @Component({
  selector: 'app-video-preview',
- imports: [ButtonModule, DialogModule],
+ imports: [ButtonModule, DialogModule, LoadingState],
  changeDetection: ChangeDetectionStrategy.OnPush,
  template: `
   <p-dialog [header]="selected()?.name ?? s.t('Video preview','Aperçu vidéo')"
@@ -17,17 +18,21 @@ export interface VideoPreviewSelection { exerciseId: string; name: string; descr
    [style]="{width:'740px',maxWidth:'calc(100vw - 24px)'}">
    @if(selected(); as video){
     <p class="mb-4 text-sm text-muted">{{s.t('Client video preview','Aperçu de la vidéo côté client')}}</p>
+    <div class="relative overflow-hidden rounded-xl" [attr.aria-busy]="loading()">
     @if(url(); as source){
      <video class="aspect-video w-full rounded-xl bg-black" [src]="source" controls playsinline
-      preload="metadata" [attr.aria-label]="video.name" (error)="playbackError.set(true)">
+      preload="auto" [attr.aria-label]="video.name" (canplay)="loading.set(false)"
+      (waiting)="loading.set(true)" (playing)="loading.set(false)"
+      (error)="loading.set(false); playbackError.set(true)">
       {{s.t('Your browser does not support video playback.','Votre navigateur ne prend pas en charge la lecture vidéo.')}}
      </video>
     }
     @if(loading()){
-     <div role="status" class="flex aspect-video items-center justify-center gap-3 rounded-xl bg-canvas text-sm text-muted">
-      <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>{{s.t('Loading video…','Chargement de la vidéo…')}}
+     <div class="pointer-events-none flex aspect-video w-full items-center justify-center bg-canvas/95" [class.absolute]="!!url()" [class.inset-0]="!!url()">
+      <app-loading-state [label]="s.t('Loading video…','Chargement de la vidéo…')"/>
      </div>
     }
+    </div>
     @if(error() || playbackError()){
      <p role="alert" class="mt-3 text-sm text-red-700">{{error() || s.t('Could not play this video. Retry to get a fresh link.','Impossible de lire cette vidéo. Réessayez pour obtenir un nouveau lien.')}}</p>
      <button pButton text type="button" class="mt-2" (click)="retry()">{{s.t('Retry video','Réessayer la vidéo')}}</button>
@@ -68,9 +73,10 @@ export class VideoPreview {
    const link=await this.api.getVideoPlaybackLink(exerciseId,signal);
    if(!signal.aborted)this.url.set(link.url);
   }catch(error){
-   if(!signal.aborted)this.error.set(error instanceof Error?error.message:this.s.t('Could not load video.','Impossible de charger la vidéo.'));
-  }finally{
-   if(!signal.aborted)this.loading.set(false);
+   if(!signal.aborted){
+    this.error.set(error instanceof Error?error.message:this.s.t('Could not load video.','Impossible de charger la vidéo.'));
+    this.loading.set(false);
+   }
   }
  }
 }

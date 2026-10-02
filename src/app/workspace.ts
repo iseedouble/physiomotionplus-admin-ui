@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
@@ -9,8 +9,9 @@ import { SelectModule } from 'primeng/select';
 import { Store, RehabModule, Exercise } from './store';
 import { AdminApiService, AdminJwtTestResponse, AdminVideo } from './api.service';
 import { VideoPreview, VideoPreviewSelection } from './video-preview';
+import { LoadingState } from './loading-state';
 
-@Component({selector:'app-workspace',imports:[FormsModule,ButtonModule,InputTextModule,TextareaModule,DialogModule,SelectModule,VideoPreview],templateUrl:'./workspace.html',changeDetection:ChangeDetectionStrategy.OnPush})
+@Component({selector:'app-workspace',imports:[FormsModule,RouterLink,ButtonModule,InputTextModule,TextareaModule,DialogModule,SelectModule,VideoPreview,LoadingState],templateUrl:'./workspace.html',changeDetection:ChangeDetectionStrategy.OnPush})
 export class Workspace {
  readonly s=inject(Store);
  readonly api=inject(AdminApiService);
@@ -20,12 +21,13 @@ export class Workspace {
  readonly search=signal('');
  readonly filter=signal('All');
  readonly selected=signal<string|null>(null);
+ readonly moduleId=input<string>();
  readonly clientId=signal<number|null>(this.s.clients().find(c=>c.id===Number(this.route.snapshot.queryParamMap.get('client')))?.id ?? null);
  readonly client=computed(()=>this.s.clients().find(c=>c.id===this.clientId()));
  readonly conversation=computed(()=>this.s.messages().filter(m=>m.clientId===this.clientId()));
  readonly modules=computed(()=>this.s.modules().filter(m=>(this.filter()==='All'||m.status===this.filter())&&(m.name+' '+m.description+' '+m.area).toLowerCase().includes(this.search().toLowerCase())));
  readonly clients=computed(()=>this.s.clients().filter(c=>(c.name+' '+c.email).toLowerCase().includes(this.search().toLowerCase())));
- readonly current=computed(()=>this.s.modules().find(m=>m.id===this.selected()));
+ readonly current=computed(()=>this.s.modules().find(m=>m.id===(this.moduleId()??this.selected())));
  readonly published=computed(()=>this.s.modules().filter(m=>m.status==='Published').length);
  readonly totalExercises=computed(()=>this.s.modules().reduce((n,m)=>n+m.exercises.length,0));
  readonly loading=signal(false);
@@ -37,6 +39,7 @@ export class Workspace {
  readonly exerciseEditor=signal(false);
  readonly exerciseDraft=signal<Exercise>({id:'',name:'',description:'',video:''});
  readonly videos=signal<AdminVideo[]>([]);
+ readonly videosLoading=signal(false);
  readonly videosLoadError=signal('');
  readonly videoBusy=signal(false);
  readonly videoError=signal('');
@@ -49,7 +52,6 @@ export class Workspace {
  readonly currentVideo=computed(()=>this.videos().find(video=>video.exerciseId===this.exerciseDraft().clientExerciseId));
  readonly existingVideoOptions=computed(()=>this.videos().map(video=>({label:video.filename+' · '+video.exerciseId,value:video.exerciseId})));
  linkVideo(id:string|null){this.exerciseDraft.update(e=>({...e,clientExerciseId:id||e.id}));this.videoFile.set(null);this.deletePending.set(false);}
- readonly detailOpen=signal(false);
  readonly reply=signal('');
  readonly notice=signal('');
  readonly apiBusy=signal(false);
@@ -61,10 +63,9 @@ export class Workspace {
  openModule(m?:RehabModule){this.dataError.set('');this.draft.set(m?{...structuredClone(m),description:m.description??''}:{id:crypto.randomUUID(),name:'',description:'',area:'Ankle',status:'Draft',exercises:[],version:0});this.editor.set(true);}
  updateDraft(field:'name'|'description'|'area',value:string){this.draft.update(d=>({...d,[field]:value}));}
  async saveModule(){if(!this.draft().name.trim())return;const saved=await this.persist(this.draft());if(saved){this.selected.set(saved.id);this.editor.set(false);}}
- openDetail(m:RehabModule){this.selected.set(m.id);this.detailOpen.set(true);this.notice.set('');}
  async togglePublish(){const m=this.current();if(!m)return;if(!m.exercises.length){this.notice.set(this.s.t('Add an exercise before publishing.','Ajoutez un exercice avant de publier.'));return;}await this.persist({...m,status:m.status==='Draft'?'Published':'Draft'});}
- constructor(){void this.loadModules();if(this.section==='modules')void this.loadVideos();}
- async loadModules(){this.loading.set(true);this.dataError.set('');try{this.s.modules.set(await this.api.listModules());}catch(error){this.dataError.set(error instanceof Error?error.message:'Could not load modules.');}finally{this.loading.set(false);}}
+ constructor(){void this.loadModules();if(this.section==='modules'||this.section==='exercises')void this.loadVideos();}
+ async loadModules(){if(this.loading())return;this.loading.set(true);this.dataError.set('');try{this.s.modules.set(await this.api.listModules());}catch(error){this.dataError.set(error instanceof Error?error.message:'Could not load modules.');}finally{this.loading.set(false);}}
  private async persist(module:RehabModule):Promise<RehabModule|null>{
   if(this.saving()||this.loading())return null;
   this.saving.set(true);this.dataError.set('');
@@ -89,7 +90,7 @@ export class Workspace {
  chooseClient(id:number){this.clientId.set(id);this.reply.set('');}
  latest(id:number){return this.s.messages().filter(m=>m.clientId===id).at(-1)?.body || this.s.t('No messages yet','Aucun message');}
  async testApi(){this.apiBusy.set(true);this.apiError.set('');try{this.apiResult.set(await this.api.testProtectedEndpoint());}catch(error){this.apiResult.set(null);this.apiError.set(error instanceof Error?error.message:this.s.t('Admin API request failed.','La requête API admin a échoué.'));}finally{this.apiBusy.set(false);}}
- async loadVideos(){this.videosLoadError.set('');try{this.videos.set(await this.api.listVideos());}catch(error){this.videosLoadError.set(error instanceof Error?error.message:'Could not load videos.');}}
+ async loadVideos(){if(this.videosLoading())return;this.videosLoading.set(true);this.videosLoadError.set('');try{this.videos.set(await this.api.listVideos());}catch(error){this.videosLoadError.set(error instanceof Error?error.message:'Could not load videos.');}finally{this.videosLoading.set(false);}}
  onVideoPicked(event:Event){const input=event.target as HTMLInputElement;const file=input.files?.[0]??null;this.videoError.set('');this.videoNotice.set('');if(file&&file.size>250*1024*1024){this.videoFile.set(null);this.videoError.set(this.s.t('Video exceeds 250 MB.','La vidéo dépasse 250 Mo.'));return;}this.videoFile.set(file);}
  async uploadVideo(){const exerciseId=this.exerciseDraft().clientExerciseId;const file=this.videoFile();if(!exerciseId||!file||this.videoBusy()||this.saving())return;if(!this.libraryMode()&&!await this.saveExercise(false))return;this.videoBusy.set(true);this.videoError.set('');this.videoNotice.set('');try{const uploaded=await this.api.uploadVideo(exerciseId,file);this.videos.update(videos=>[...videos.filter(video=>video.exerciseId!==exerciseId),uploaded]);this.videoFile.set(null);this.videoNotice.set(this.s.t('Video uploaded for this exercise ID.','Vidéo téléversée pour cet identifiant d’exercice.'));}catch(error){this.videoError.set(error instanceof Error?error.message:'Upload failed.');}finally{this.videoBusy.set(false);}}
  async deleteVideo(){const exerciseId=this.exerciseDraft().clientExerciseId;if(!exerciseId)return;if(!this.deletePending()){this.deletePending.set(true);return;}this.videoBusy.set(true);this.videoError.set('');try{await this.api.deleteVideo(exerciseId);this.videos.update(videos=>videos.filter(video=>video.exerciseId!==exerciseId));this.videoNotice.set(this.s.t('Video deleted.','Vidéo supprimée.'));this.deletePending.set(false);}catch(error){this.videoError.set(error instanceof Error?error.message:'Deletion failed.');}finally{this.videoBusy.set(false);}}
