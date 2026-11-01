@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { GoogleAuthProvider, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, type User } from 'firebase/auth';
+import { GoogleAuthProvider, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, type User } from 'firebase/auth';
 import { adminAuth } from './firebase';
 
 @Injectable({providedIn:'root'})
@@ -10,5 +10,7 @@ export class AdminAuthService {
  async signIn(email:string,password:string){await signInWithEmailAndPassword(adminAuth,email.trim(),password);}
  async signInWithGoogle(){const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await signInWithPopup(adminAuth,provider);}
  async reset(email:string){await sendPasswordResetEmail(adminAuth,email.trim());}
+ async sendVerification(){const user=adminAuth.currentUser;if(!user)throw new Error('Not signed in');await sendEmailVerification(user);}
+ async refreshVerification(){const user=adminAuth.currentUser;if(!user)throw new Error('Not signed in');await user.reload();await user.getIdToken(true);this.user.set(adminAuth.currentUser);return !!adminAuth.currentUser?.emailVerified;}
  async signOut(){await signOut(adminAuth);}
 }

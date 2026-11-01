@@ -1,6 +1,18 @@
 @import 'tailwindcss';
 @import 'primeicons/primeicons.css';
-@theme { --font-sans:'DM Sans','Segoe UI',sans-serif; --color-forest:#243f32; --color-sage:#658065; --color-lime:#d9edb4; --color-canvas:#f8f9f5; --color-line:#e8ebe3; --color-muted:#737a70; }
-@layer base { body {@apply m-0 bg-canvas font-sans text-forest;} button,a { @apply touch-manipulation; } :focus-visible {outline:2px solid #658065;outline-offset:4px;} }
+@theme {
+  --font-sans: 'DM Sans', 'Segoe UI', sans-serif;
+  /* Shared components retain these utility names; their admin palette is blue. */
+  --color-forest: #172554;
+  --color-sage: #1d4ed8;
+  --color-lime: #bfdbfe;
+  --color-canvas: #f4f7fc;
+  --color-line: #dce4f0;
+  --color-muted: #5c6b82;
+  --color-brand-soft: #e8efff;
+  --color-brand-tint: #eef3ff;
+  --color-avatar: #dbeafe;
+}
+@layer base { body {@apply m-0 bg-canvas font-sans text-forest antialiased;} button,a { @apply touch-manipulation; } :focus-visible {outline:2px solid var(--color-sage);outline-offset:4px;} ::selection { @apply bg-lime text-forest; } }
 @layer components { .surface {@apply rounded-2xl border border-line bg-white;} .eyebrow {@apply text-[10px] font-semibold tracking-[2px] uppercase text-sage;} .field {@apply flex flex-col gap-2 text-sm;} }
 

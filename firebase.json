@@ -3,14 +3,80 @@
     {
       "target": "dev",
       "public": "dist/physiomotionplus-admin-ui/browser",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/firebase-messaging-sw.js",
+          "headers": [
+            {
+              "value": "no-cache",
+              "key": "Cache-Control"
+            },
+            {
+              "value": "/",
+              "key": "Service-Worker-Allowed"
+            }
+          ]
+        },
+        {
+          "source": "/care-config.json",
+          "headers": [
+            {
+              "value": "no-cache",
+              "key": "Cache-Control"
+            }
+          ]
+        }
+      ]
     },
     {
       "target": "prod",
       "public": "dist/physiomotionplus-admin-ui/browser",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/firebase-messaging-sw.js",
+          "headers": [
+            {
+              "value": "no-cache",
+              "key": "Cache-Control"
+            },
+            {
+              "value": "/",
+              "key": "Service-Worker-Allowed"
+            }
+          ]
+        },
+        {
+          "source": "/care-config.json",
+          "headers": [
+            {
+              "value": "no-cache",
+              "key": "Cache-Control"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

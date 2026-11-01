@@ -33,6 +33,9 @@ export class Workspace {
  readonly totalExercises=computed(()=>this.s.modules().reduce((n,m)=>n+m.exercises.length,0));
  readonly loading=signal(false);
  readonly saving=signal(false);
+ readonly moduleToDelete=signal<RehabModule|null>(null);
+ readonly deletingModule=signal(false);
+ readonly moduleDeleteError=signal('');
  readonly dataError=signal('');
  readonly libraryMode=signal(false);
  readonly editor=signal(false);
@@ -61,11 +64,31 @@ export class Workspace {
  openModule(m?:RehabModule){this.dataError.set('');this.draft.set(m?{...structuredClone(m),description:m.description??''}:{id:crypto.randomUUID(),name:'',description:'',area:'Ankle',status:'Draft',exercises:[],version:0});this.editor.set(true);}
  updateDraft(field:'name'|'description'|'area',value:string){this.draft.update(d=>({...d,[field]:value}));}
  async saveModule(){if(!this.draft().name.trim())return;const saved=await this.persist(this.draft());if(saved){this.selected.set(saved.id);this.editor.set(false);}}
+ requestModuleDelete(module:RehabModule){
+  if(this.saving()||this.loading()||this.deletingModule()||this.videoBusy())return;
+  this.moduleDeleteError.set('');
+  this.moduleToDelete.set(structuredClone(module));
+ }
+ closeModuleDelete(){if(!this.deletingModule())this.moduleToDelete.set(null);}
+ async deleteModule(){
+  const module=this.moduleToDelete();
+  if(!module||this.deletingModule()||this.saving()||this.loading()||this.videoBusy())return;
+  this.deletingModule.set(true);this.moduleDeleteError.set('');
+  try{
+   await this.api.deleteModule(module);
+   this.s.modules.update(modules=>modules.filter(item=>item.id!==module.id));
+   this.s.clients.update(clients=>clients.map(client=>({...client,moduleIds:client.moduleIds.filter(id=>id!==module.id)})));
+   this.moduleToDelete.set(null);
+   if(this.selected()===module.id)this.selected.set(null);
+   if(this.section==='exercises')await this.router.navigate(['/modules']);
+  }catch(error){this.moduleDeleteError.set(error instanceof Error?error.message:this.s.t('Could not delete module.','Impossible de supprimer le module.'));}
+  finally{this.deletingModule.set(false);}
+ }
  async togglePublish(){const m=this.current();if(!m)return;if(!m.exercises.length){this.notice.set(this.s.t('Add an exercise before publishing.','Ajoutez un exercice avant de publier.'));return;}await this.persist({...m,status:m.status==='Draft'?'Published':'Draft'});}
  constructor(){if(this.section!=='videos')void this.loadModules();if(this.section==='videos'||this.section==='exercises')void this.loadVideos();}
  async loadModules(){if(this.loading())return;this.loading.set(true);this.dataError.set('');try{this.s.modules.set(await this.api.listModules());}catch(error){this.dataError.set(error instanceof Error?error.message:'Could not load modules.');}finally{this.loading.set(false);}}
  private async persist(module:RehabModule):Promise<RehabModule|null>{
-  if(this.saving()||this.loading())return null;
+  if(this.saving()||this.loading()||this.deletingModule())return null;
   this.saving.set(true);this.dataError.set('');
   try{const saved=await this.api.saveModule(module);this.s.modules.update(ms=>ms.some(m=>m.id===saved.id)?ms.map(m=>m.id===saved.id?saved:m):[...ms,saved]);return saved;}
   catch(error){this.dataError.set(error instanceof Error?error.message:'Could not save changes.');return null;}

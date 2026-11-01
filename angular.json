@@ -13,6 +13,12 @@
             "tsConfig": "tsconfig.app.json",
             "styles": [
               "src/styles.css"
+            ],
+            "assets": [
+              {
+                "input": "public",
+                "glob": "**/*"
+              }
             ]
           },
           "configurations": {
@@ -50,15 +56,15 @@
           },
           "defaultConfiguration": "production"
         },
-          "serve": {
+        "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
             "development": {
               "buildTarget": "physiomotionplus-admin-ui:build:development"
             }
           },
-            "defaultConfiguration": "development"
-          }
+          "defaultConfiguration": "development"
+        }
       }
     }
   }

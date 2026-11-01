@@ -36,6 +36,16 @@ export class AdminApiService {
     return response.json();
   }
 
+  async deleteModule(module: RehabModule): Promise<void> {
+    const response = await fetch(this.apiUrl + '/api/admin/modules/' + encodeURIComponent(module.id) + '?version=' + module.version, {
+      method: 'DELETE', headers: await this.authHeaders(),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || error.detail || 'Could not delete module (' + response.status + ')');
+    }
+  }
+
   async listVideos(): Promise<AdminVideo[]> {
     const response = await fetch(this.apiUrl + '/api/admin/videos', { headers: await this.authHeaders() });
     if (!response.ok) throw this.videoError(response, 'Could not load videos');
