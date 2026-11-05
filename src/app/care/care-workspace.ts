@@ -8,6 +8,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { CareService, Connection, Physio, Thread } from './care.service';
@@ -15,7 +16,7 @@ import { Conversation } from './conversation';
 
 @Component({
   selector: 'app-care-workspace',
-  imports: [FormsModule, ButtonModule, InputTextModule, Conversation],
+  imports: [FormsModule, ButtonModule, InputTextModule, Conversation, RouterLink],
   templateUrl: './care-workspace.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -65,8 +66,36 @@ export class CareWorkspace {
       this.moreConnections.set(false);
       this.moreThreads.set(false);
       if (!user) return;
-      untracked(() => void this.refreshSummary(generation));
-      onCleanup(() => this.generation++);
+      const stop = untracked(() =>
+        this.care.watch(
+          '',
+          (event, payload) => {
+            if (generation !== this.generation) return;
+            if (event === 'closed') {
+              this.care.connections.set([]);
+              this.care.threads.set([]);
+              this.selected.set(null);
+            }
+            if (event === 'connections') {
+              const list = payload as Connection[];
+              this.care.connections.update((old) => this.merge(old, list));
+              this.moreConnections.set(list.length === 100);
+              this.error.set('');
+            }
+            if (event === 'threads') {
+              const list = payload as Thread[];
+              this.care.threads.update((old) => this.merge(old, list));
+              this.moreThreads.set(list.length === 100);
+              this.error.set('');
+            }
+          },
+          (value) => this.status.set(value),
+        ),
+      );
+      onCleanup(() => {
+        this.generation++;
+        stop();
+      });
       untracked(
         () =>
           void this.run(async () => {

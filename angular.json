@@ -52,6 +52,17 @@
             "development": {
               "optimization": false,
               "sourceMap": true
+            },
+            "local-api": {
+              "extractLicenses": false,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.local.ts"
+                }
+              ],
+              "sourceMap": true,
+              "optimization": false
             }
           },
           "defaultConfiguration": "production"
@@ -61,6 +72,9 @@
           "configurations": {
             "development": {
               "buildTarget": "physiomotionplus-admin-ui:build:development"
+            },
+            "local-api": {
+              "buildTarget": "physiomotionplus-admin-ui:build:local-api"
             }
           },
           "defaultConfiguration": "development"

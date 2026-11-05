@@ -7,3 +7,5 @@ out-tsc/
 
 /public/firebase-messaging-sw.js
 /tmp/
+
+.firebase/
