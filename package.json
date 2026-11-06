@@ -4,10 +4,7 @@
   "private": true,
   "scripts": {
     "start": "ng serve --port 4201",
-    "build": "ng build",
-    "build:worker": "node scripts/build-care-worker.mjs",
-    "prebuild": "npm run build:worker",
-    "prestart": "npm run build:worker"
+    "build": "ng build"
   },
   "dependencies": {
     "@angular/common": "^21.2.25",

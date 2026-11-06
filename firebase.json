@@ -27,15 +27,6 @@
               "key": "Service-Worker-Allowed"
             }
           ]
-        },
-        {
-          "source": "/care-config.json",
-          "headers": [
-            {
-              "value": "no-cache",
-              "key": "Cache-Control"
-            }
-          ]
         }
       ]
     },
@@ -64,15 +55,6 @@
             {
               "value": "/",
               "key": "Service-Worker-Allowed"
-            }
-          ]
-        },
-        {
-          "source": "/care-config.json",
-          "headers": [
-            {
-              "value": "no-cache",
-              "key": "Cache-Control"
             }
           ]
         }

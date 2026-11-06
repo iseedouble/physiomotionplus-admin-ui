@@ -8,12 +8,7 @@ import { Login } from './login';
 import { VerifyEmail } from './verify-email';
 @Component({selector:'app-root',imports:[RouterLink,RouterLinkActive,RouterOutlet,ButtonModule,Login,VerifyEmail],changeDetection:ChangeDetectionStrategy.OnPush,template:`
 @if(!auth.ready()){<main class="flex min-h-screen items-center justify-center bg-canvas"><i class="pi pi-spin pi-spinner text-3xl text-sage"></i></main>}@else if(!auth.user()){<app-admin-login/>}@else{
-@if(careLifecycle.newUpdate()){
-  <aside role="status" class="fixed right-4 bottom-4 z-50 flex max-w-sm items-center gap-3 rounded-xl border border-line bg-white p-4 shadow-lg">
-    <a routerLink="/messages" (click)="careLifecycle.newUpdate.set(false)" class="text-sm underline">{{careLifecycle.t('You have a new private update. Open messages.','Nouvelle mise à jour privée. Ouvrir les messages.')}}</a>
-    <button pButton text type="button" icon="pi pi-times" [attr.aria-label]="careLifecycle.t('Dismiss','Fermer')" (click)="careLifecycle.newUpdate.set(false)"></button>
-  </aside>
-}
+
 <div class="min-h-screen">
  <aside class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-white p-6 lg:flex">
   <a routerLink="/modules" class="flex items-center gap-2 text-lg font-bold"><span class="flex size-9 items-center justify-center rounded-xl bg-forest text-lime"><i class="pi pi-wave-pulse"></i></span>physiomotion<span class="-ml-2 text-sage">+</span></a>

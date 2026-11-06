@@ -5,7 +5,6 @@ out-tsc/
 .idea/
 
 
-/public/firebase-messaging-sw.js
 /tmp/
 
 .firebase/

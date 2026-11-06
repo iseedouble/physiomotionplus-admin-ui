@@ -1,275 +1,264 @@
 <div class="space-y-6">
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-medium">{{ care.t('Private care', 'Accompagnement privé') }}</h1>
+      <h1 class="text-3xl font-medium">
+        {{ care.t('Private care', 'Accompagnement privé') }}
+      </h1>
       <p class="mt-2 text-sm text-muted" role="status">{{ status() }}</p>
     </div>
     <div class="flex flex-wrap gap-2">
-      <button pButton outlined type="button" (click)="refreshSummary()">
+      <button pButton outlined type="button" (click)="refresh()">
         {{ care.t('Refresh', 'Actualiser') }}
       </button>
-    <button
-      pButton
-      outlined
-      type="button"
-      [disabled]="busy() || care.notificationState() === 'unavailable'"
-      (click)="notifications()"
-    >
-      {{
-        care.notificationState() === 'on'
-          ? care.t('Disable notifications', 'Désactiver les notifications')
-          : care.t('Enable notifications', 'Activer les notifications')
-      }}
-    </button>
     </div>
   </header>
-  @if (care.notificationNotice()) {
-    <p role="status" class="text-sm text-muted">{{ care.notificationNotice() }}</p>
-  }
-  @if (care.notificationState() !== 'on') {
-    <p class="text-sm text-muted">
-      {{ care.t('Conversations update live here. Enable notifications for alerts when you are away.', 'Les conversations se mettent à jour en direct ici. Activez les notifications pour être averti en votre absence.') }}
-    </p>
-  }
+  <p class="text-sm text-muted">
+    {{ care.t('Messages are saved privately. Use Refresh to check for new
+    messages and connection updates.', 'Les messages sont enregistrés en privé.
+    Actualisez pour voir les nouveaux messages et l’état des connexions.') }}
+  </p>
   @if (error()) {
-    <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">{{ error() }}</p>
-  }
-  @if (notice()) {
-    <p role="status" class="rounded-xl bg-green-50 p-4 text-sm text-green-900">{{ notice() }}</p>
-  }
-  @if (care.isPhysio) {
-    <section class="surface p-5">
-      <h2 class="mb-4 text-xl font-medium">
-        {{ care.t('Your directory profile', 'Votre profil dans le répertoire') }}
-      </h2>
-      <form class="grid gap-4 sm:grid-cols-2" (ngSubmit)="saveProfile()">
-        <label class="space-y-2 text-sm"
-          >{{ care.t('Display name', 'Nom affiché')
-          }}<input
-            pInputText
-            class="block w-full"
-            name="name"
-            required
-            maxlength="100"
-            [ngModel]="profileName()"
-            (ngModelChange)="profileName.set($event)"
-        /></label>
-        <label class="space-y-2 text-sm"
-          >{{ care.t('Clinic', 'Clinique')
-          }}<input
-            pInputText
-            class="block w-full"
-            name="clinic"
-            maxlength="200"
-            [ngModel]="clinic()"
-            (ngModelChange)="clinic.set($event)"
-        /></label>
-        <button
-          pButton
-          outlined
-          type="button"
-          [attr.aria-pressed]="discoverable()"
-          (click)="discoverable.set(!discoverable())"
-        >
-          {{
-            discoverable()
-              ? care.t('Accepting connection requests', 'Accepte les demandes')
-              : care.t('Hidden from directory', 'Masqué du répertoire')
-          }}
-        </button>
-        <button pButton type="submit" [disabled]="busy() || !profileName().trim()">
-          {{ care.t('Save profile', 'Enregistrer le profil') }}
-        </button>
-      </form>
-    </section>
-    <section class="surface space-y-4 p-5">
-      <h2 class="text-xl font-medium">{{ care.t('Invite a client', 'Inviter un client') }}</h2>
-      <form class="flex flex-wrap items-end gap-3" (ngSubmit)="invite()">
-        <label class="min-w-0 flex-1 text-sm"
-          >{{ care.t('Client email', 'Courriel du client')
-          }}<input
-            pInputText
-            class="mt-2 block w-full"
-            name="email"
-            type="email"
-            required
-            maxlength="254"
-            [ngModel]="email()"
-            (ngModelChange)="email.set($event)" /></label
-        ><button pButton type="submit" [disabled]="busy() || !email()">
-          {{ care.t('Create invitation', 'Créer une invitation') }}
-        </button>
-      </form>
-      @if (inviteUrl()) {
-        <div class="space-y-2">
-          <label class="block text-sm" for="invitation-link">{{
-            care.t('Invitation link, valid for seven days', 'Lien d’invitation, valide sept jours')
-          }}</label
-          ><input
-            pInputText
-            id="invitation-link"
-            class="w-full"
-            readonly
-            [value]="inviteUrl()"
-          /><button pButton text type="button" (click)="copyInvite()">
-            {{ care.t('Copy link', 'Copier le lien') }}
-          </button>
-        </div>
-      }
-    </section>
-  } @else {
-    @if (invitation()) {
-      <section class="surface space-y-3 p-5">
-        <h2 class="font-semibold">
-          {{ care.t('Physio invitation', 'Invitation du physiothérapeute') }}
-        </h2>
-        <p class="text-sm">
-          {{
-            care.t(
-              'Accept with the verified email address the invitation was sent to. Your physio will then approve the connection.',
-              'Acceptez avec le courriel vérifié auquel l’invitation a été envoyée. Votre physiothérapeute approuvera ensuite la connexion.'
-            )
-          }}
-        </p>
-        <button pButton type="button" [disabled]="busy() || !!active()" (click)="request('')">
-          {{ care.t('Accept invitation', 'Accepter l’invitation') }}
-        </button>
-      </section>
+  <p role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-800">
+    {{ error() }}
+  </p>
+  } @if (notice()) {
+  <p role="status" class="rounded-xl bg-green-50 p-4 text-sm text-green-900">
+    {{ notice() }}
+  </p>
+  } @if (care.isPhysio) {
+  <section class="surface p-5">
+    <h2 class="mb-4 text-xl font-medium">
+      {{ care.t('Your directory profile', 'Votre profil dans le répertoire') }}
+    </h2>
+    <form class="grid gap-4 sm:grid-cols-2" (ngSubmit)="saveProfile()">
+      <label class="space-y-2 text-sm"
+        >{{ care.t('Display name', 'Nom affiché') }}<input
+          pInputText
+          class="block w-full"
+          name="name"
+          required
+          maxlength="100"
+          [ngModel]="profileName()"
+          (ngModelChange)="profileName.set($event)"
+      /></label>
+      <label class="space-y-2 text-sm"
+        >{{ care.t('Clinic', 'Clinique') }}<input
+          pInputText
+          class="block w-full"
+          name="clinic"
+          maxlength="200"
+          [ngModel]="clinic()"
+          (ngModelChange)="clinic.set($event)"
+      /></label>
+      <button
+        pButton
+        outlined
+        type="button"
+        [attr.aria-pressed]="discoverable()"
+        (click)="discoverable.set(!discoverable())"
+      >
+        {{ discoverable() ? care.t('Accepting connection requests', 'Accepte les
+        demandes') : care.t('Hidden from directory', 'Masqué du répertoire') }}
+      </button>
+      <button
+        pButton
+        type="submit"
+        [disabled]="busy() || !profileName().trim()"
+      >
+        {{ care.t('Save profile', 'Enregistrer le profil') }}
+      </button>
+    </form>
+  </section>
+  <section class="surface space-y-4 p-5">
+    <h2 class="text-xl font-medium">
+      {{ care.t('Invite a client', 'Inviter un client') }}
+    </h2>
+    <form class="flex flex-wrap items-end gap-3" (ngSubmit)="invite()">
+      <label class="min-w-0 flex-1 text-sm"
+        >{{ care.t('Client email', 'Courriel du client') }}<input
+          pInputText
+          class="mt-2 block w-full"
+          name="email"
+          type="email"
+          required
+          maxlength="254"
+          [ngModel]="email()"
+          (ngModelChange)="email.set($event)" /></label
+      ><button pButton type="submit" [disabled]="busy() || !email()">
+        {{ care.t('Create invitation', 'Créer une invitation') }}
+      </button>
+    </form>
+    @if (inviteUrl()) {
+    <div class="space-y-2">
+      <label class="block text-sm" for="invitation-link"
+        >{{ care.t('Invitation link, valid for seven days', 'Lien d’invitation,
+        valide sept jours') }}</label
+      ><input
+        pInputText
+        id="invitation-link"
+        class="w-full"
+        readonly
+        [value]="inviteUrl()"
+      /><button pButton text type="button" (click)="copyInvite()">
+        {{ care.t('Copy link', 'Copier le lien') }}
+      </button>
+    </div>
     }
-    @if (!active()) {
-      <section class="surface space-y-4 p-5">
-        <h2 class="text-xl font-medium">
-          {{ care.t('Choose your physio', 'Choisir votre physiothérapeute') }}
-        </h2>
-        <p class="text-sm text-muted">
-          {{
-            care.t(
-              'Your physio approves the connection before you can exchange private comments.',
-              'Votre physiothérapeute approuve la connexion avant les échanges privés.'
-            )
-          }}
-        </p>
-        @for (physio of directory(); track physio.id) {
-          <article
-            class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line p-4"
-          >
-            <div>
-              <h3 class="font-medium">{{ physio.name }}</h3>
-              <p class="text-sm text-muted">{{ physio.clinic }}</p>
-            </div>
-            <button
-              pButton
-              outlined
-              type="button"
-              [disabled]="busy() || !!invitation()"
-              (click)="request(physio.id)"
-            >
-              {{ care.t('Request connection', 'Demander une connexion') }}
-            </button>
-          </article>
-        } @empty {
-          <p class="text-sm text-muted">
-            {{
-              care.t(
-                'No physios are accepting requests yet. You can also join using an invitation.',
-                'Aucun physiothérapeute n’accepte de demandes pour le moment. Vous pouvez aussi utiliser une invitation.'
-              )
-            }}
-          </p>
-        }
-        @if (directoryMore()) {
-          <button pButton text type="button" [disabled]="busy()" (click)="more()">
-            {{ care.t('More physios', 'Autres physiothérapeutes') }}
-          </button>
-        }
-      </section>
+  </section>
+  } @else { @if (invitation()) {
+  <section class="surface space-y-3 p-5">
+    <h2 class="font-semibold">
+      {{ care.t('Physio invitation', 'Invitation du physiothérapeute') }}
+    </h2>
+    <p class="text-sm">
+      {{ care.t( 'Accept with the verified email address the invitation was sent
+      to. Your physio will then approve the connection.', 'Acceptez avec le
+      courriel vérifié auquel l’invitation a été envoyée. Votre physiothérapeute
+      approuvera ensuite la connexion.' ) }}
+    </p>
+    <button
+      pButton
+      type="button"
+      [disabled]="busy() || !!active()"
+      (click)="request('')"
+    >
+      {{ care.t('Accept invitation', 'Accepter l’invitation') }}
+    </button>
+  </section>
+  } @if (!active()) {
+  <section class="surface space-y-4 p-5">
+    <h2 class="text-xl font-medium">
+      {{ care.t('Choose your physio', 'Choisir votre physiothérapeute') }}
+    </h2>
+    <p class="text-sm text-muted">
+      {{ care.t( 'Your physio approves the connection before you can exchange
+      private comments.', 'Votre physiothérapeute approuve la connexion avant
+      les échanges privés.' ) }}
+    </p>
+    @for (physio of directory(); track physio.id) {
+    <article
+      class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line p-4"
+    >
+      <div>
+        <h3 class="font-medium">{{ physio.name }}</h3>
+        <p class="text-sm text-muted">{{ physio.clinic }}</p>
+      </div>
+      <button
+        pButton
+        outlined
+        type="button"
+        [disabled]="busy() || !!invitation()"
+        (click)="request(physio.id)"
+      >
+        {{ care.t('Request connection', 'Demander une connexion') }}
+      </button>
+    </article>
+    } @empty {
+    <p class="text-sm text-muted">
+      {{ care.t( 'No physios are accepting requests yet. You can also join using
+      an invitation.', 'Aucun physiothérapeute n’accepte de demandes pour le
+      moment. Vous pouvez aussi utiliser une invitation.' ) }}
+    </p>
+    } @if (directoryMore()) {
+    <button pButton text type="button" [disabled]="busy()" (click)="more()">
+      {{ care.t('More physios', 'Autres physiothérapeutes') }}
+    </button>
     }
-  }
+  </section>
+  } }
   <section class="surface space-y-4 p-5">
     <h2 class="text-xl font-medium">
       {{ care.t('Connections and requests', 'Connexions et demandes') }}
     </h2>
     @for (connection of care.connections(); track connection.id) {
-      <article
-        class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line p-4"
-      >
-        <div>
-          <h3 class="font-medium">
-            {{ care.isPhysio ? connection.clientName : connection.physioName }}
-          </h3>
-          <p class="text-sm text-muted">{{ label(connection.status) }}</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          @if (care.isPhysio && connection.status === 'pending') {
-            <button
-              pButton
-              type="button"
-              [disabled]="busy()"
-              (click)="decide(connection.id, 'active')"
-            >
-              {{ care.t('Approve', 'Approuver') }}</button
-            ><button
-              pButton
-              outlined
-              type="button"
-              [disabled]="busy()"
-              (click)="decide(connection.id, 'declined')"
-            >
-              {{ care.t('Decline', 'Refuser') }}
-            </button>
-          }
-          @if (
-            connection.status === 'active' || (!care.isPhysio && connection.status === 'pending')
-          ) {
-            @if (confirmEnd() === connection.id) {
-              <span class="text-sm">{{
-                care.t(
-                  'Close this connection and its conversations?',
-                  'Fermer cette connexion et ses conversations ?'
-                )
-              }}</span
-              ><button
-                pButton
-                severity="danger"
-                type="button"
-                [disabled]="busy()"
-                (click)="decide(connection.id, 'ended')"
-              >
-                {{ care.t('Confirm', 'Confirmer') }}</button
-              ><button pButton text type="button" (click)="confirmEnd.set('')">
-                {{ care.t('Keep connection', 'Conserver') }}
-              </button>
-            } @else {
-              <button
-                pButton
-                text
-                severity="danger"
-                type="button"
-                [disabled]="busy()"
-                (click)="confirmEnd.set(connection.id)"
-              >
-                {{ care.t('End connection', 'Terminer la connexion') }}
-              </button>
-            }
-          }
-        </div>
-      </article>
+    <article
+      class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line p-4"
+    >
+      <div>
+        <h3 class="font-medium">
+          {{ care.isPhysio ? connection.clientName : connection.physioName }}
+        </h3>
+        <p class="text-sm text-muted">{{ label(connection.status) }}</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @if (care.isPhysio && connection.status === 'pending') {
+        <button
+          pButton
+          type="button"
+          [disabled]="busy()"
+          (click)="decide(connection.id, 'active')"
+        >
+          {{ care.t('Approve', 'Approuver') }}</button
+        ><button
+          pButton
+          outlined
+          type="button"
+          [disabled]="busy()"
+          (click)="decide(connection.id, 'declined')"
+        >
+          {{ care.t('Decline', 'Refuser') }}
+        </button>
+        } @if ( connection.status === 'active' || (!care.isPhysio &&
+        connection.status === 'pending') ) { @if (confirmEnd() ===
+        connection.id) {
+        <span class="text-sm"
+          >{{ care.t( 'Close this connection and its conversations?', 'Fermer
+          cette connexion et ses conversations ?' ) }}</span
+        ><button
+          pButton
+          severity="danger"
+          type="button"
+          [disabled]="busy()"
+          (click)="decide(connection.id, 'ended')"
+        >
+          {{ care.t('Confirm', 'Confirmer') }}</button
+        ><button pButton text type="button" (click)="confirmEnd.set('')">
+          {{ care.t('Keep connection', 'Conserver') }}
+        </button>
+        } @else {
+        <button
+          pButton
+          text
+          severity="danger"
+          type="button"
+          [disabled]="busy()"
+          (click)="confirmEnd.set(connection.id)"
+        >
+          {{ care.t('End connection', 'Terminer la connexion') }}
+        </button>
+        } }
+      </div>
+    </article>
     } @empty {
-      <p class="text-sm text-muted">
-        {{ care.t('No connections yet.', 'Aucune connexion pour le moment.') }}
-      </p>
-    }
-    @if (moreConnections()) {
-      <button pButton text type="button" [disabled]="busy()" (click)="olderConnections()">
-        {{ care.t('Load more connections', 'Charger d’autres connexions') }}
-      </button>
+    <p class="text-sm text-muted">
+      {{ care.t('No connections yet.', 'Aucune connexion pour le moment.') }}
+    </p>
+    } @if (moreConnections()) {
+    <button
+      pButton
+      text
+      type="button"
+      [disabled]="busy()"
+      (click)="olderConnections()"
+    >
+      {{ care.t('Load more connections', 'Charger d’autres connexions') }}
+    </button>
     }
   </section>
   @if (!care.isPhysio && active()?.status === 'active') {
-    <section class="surface flex flex-wrap items-center justify-between gap-4 p-5">
-      <p class="text-sm">{{ care.t('Your physio connection is ready. Open an exercise video and choose “Ask your physio” to start a private conversation.', 'Votre connexion physio est prête. Ouvrez une vidéo d’exercice et choisissez « Poser une question » pour commencer une conversation privée.') }}</p>
-      <a pButton routerLink="/library" outlined>{{ care.t('Open video library', 'Ouvrir la vidéothèque') }}</a>
-    </section>
+  <section
+    class="surface flex flex-wrap items-center justify-between gap-4 p-5"
+  >
+    <p class="text-sm">
+      {{ care.t('Your physio connection is ready. Open an exercise video and
+      choose “Ask your physio” to start a private conversation.', 'Votre
+      connexion physio est prête. Ouvrez une vidéo d’exercice et choisissez «
+      Poser une question » pour commencer une conversation privée.') }}
+    </p>
+    <a pButton routerLink="/library" outlined
+      >{{ care.t('Open video library', 'Ouvrir la vidéothèque') }}</a
+    >
+  </section>
   }
   <section class="grid gap-5 lg:grid-cols-[minmax(240px,1fr)_2fr]">
     <div class="surface space-y-3 p-5">
@@ -277,42 +266,48 @@
         {{ care.t('Video conversations', 'Conversations sur les vidéos') }}
       </h2>
       @for (thread of visibleThreads(); track thread.id) {
-        <button
-          type="button"
-          class="w-full rounded-xl border border-line p-4 text-left hover:bg-canvas"
-          [attr.aria-pressed]="selected()?.id === thread.id"
-          [class.bg-canvas]="selected()?.id === thread.id"
-          (click)="selected.set(thread)"
+      <button
+        type="button"
+        class="w-full rounded-xl border border-line p-4 text-left hover:bg-canvas"
+        [attr.aria-pressed]="selected()?.id === thread.id"
+        [class.bg-canvas]="selected()?.id === thread.id"
+        (click)="selected.set(thread)"
+      >
+        <span class="block font-medium">{{ thread.title }}</span
+        ><span class="text-sm text-muted"
+          >{{ care.isPhysio ? thread.clientName : thread.physioName }}</span
         >
-          <span class="block font-medium">{{ thread.title }}</span
-          ><span class="text-sm text-muted">{{
-            care.isPhysio ? thread.clientName : thread.physioName
-          }}</span>
-        </button>
+      </button>
       } @empty {
-        <p class="text-sm text-muted">
-          {{
-            care.t(
-              care.isPhysio ? 'Client questions about videos will appear here after you approve their connection.' : 'Open an exercise video and choose “Ask your physio” to start a conversation.',
-              care.isPhysio ? 'Les questions de vos clients sur les vidéos apparaîtront ici après l’approbation de leur connexion.' : 'Ouvrez une vidéo d’exercice et choisissez « Poser une question » pour commencer une conversation.'
-            )
-          }}
-        </p>
-      }
-      @if (moreThreads()) {
-        <button pButton text type="button" [disabled]="busy()" (click)="olderThreads()">
-          {{ care.t('Load more conversations', 'Charger d’autres conversations') }}
-        </button>
+      <p class="text-sm text-muted">
+        {{ care.t( care.isPhysio ? 'Client questions about videos will appear
+        here after you approve their connection.' : 'Open an exercise video and
+        choose “Ask your physio” to start a conversation.', care.isPhysio ? 'Les
+        questions de vos clients sur les vidéos apparaîtront ici après
+        l’approbation de leur connexion.' : 'Ouvrez une vidéo d’exercice et
+        choisissez « Poser une question » pour commencer une conversation.' ) }}
+      </p>
+      } @if (moreThreads()) {
+      <button
+        pButton
+        text
+        type="button"
+        [disabled]="busy()"
+        (click)="olderThreads()"
+      >
+        {{ care.t('Load more conversations', 'Charger d’autres conversations')
+        }}
+      </button>
       }
     </div>
     <div class="surface min-w-0 p-5">
       @if (selected(); as thread) {
-        <h2 class="text-xl font-medium">{{ thread.title }}</h2>
-        <app-care-conversation [threadId]="thread.id" />
+      <h2 class="text-xl font-medium">{{ thread.title }}</h2>
+      <app-care-conversation [threadId]="thread.id" />
       } @else {
-        <p class="text-sm text-muted">
-          {{ care.t('Select a conversation.', 'Sélectionnez une conversation.') }}
-        </p>
+      <p class="text-sm text-muted">
+        {{ care.t('Select a conversation.', 'Sélectionnez une conversation.') }}
+      </p>
       }
     </div>
   </section>

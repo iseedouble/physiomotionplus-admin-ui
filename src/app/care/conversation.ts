@@ -42,8 +42,8 @@ import { CareService, CareError, CareMessage } from "./care.service";
       <p class="text-sm text-muted">
         {{
           care.t(
-            "Visible only to you and your connected physio or client.",
-            "Visible uniquement par vous et votre physiothérapeute ou client connecté."
+            "Visible only to you and your connected physio or client. Use Refresh to see new replies.",
+            "Visible uniquement par vous et votre physiothérapeute ou client connecté. Actualisez pour voir les nouvelles réponses."
           )
         }}
       </p>
@@ -147,7 +147,6 @@ export class Conversation {
   private pending: { id: string; body: string } | null = null;
   private generation = 0;
   private refreshSerial = 0;
-  private lastUpdateVersion = this.care.updateVersion();
   constructor() {
     effect((onCleanup) => {
       const id = this.threadId();
@@ -161,35 +160,10 @@ export class Conversation {
       this.hasOlder.set(false);
       this.sending.set(false);
       this.loadingOlder.set(false);
-      const stop = untracked(() =>
-        this.care.watch(
-          id,
-          (event, payload) => {
-            if (generation !== this.generation) return;
-            if (event === "closed") {
-              this.closed.set(true);
-              this.messages.set([]);
-            }
-            if (event === "messages") {
-              this.merge(payload as CareMessage[]);
-              this.hasOlder.set((this.ordered()[0]?.sequence ?? 1) > 1);
-              this.closed.set(false);
-              this.error.set("");
-            }
-          },
-          (value) => this.status.set(value),
-        ),
-      );
       onCleanup(() => {
         this.generation++;
-        stop();
       });
-    });
-    effect(() => {
-      const version = this.care.updateVersion();
-      if (version === this.lastUpdateVersion) return;
-      this.lastUpdateVersion = version;
-      untracked(() => void this.refreshMessages());
+      untracked(() => void this.refreshMessages(generation, id));
     });
   }
   async refreshMessages(
@@ -264,7 +238,6 @@ export class Conversation {
         this.merge([message]);
         this.draft.set("");
         this.pending = null;
-        this.care.announceUpdate(true);
       }
     } catch (e) {
       if (generation === this.generation) this.error.set(this.care.error(e));
