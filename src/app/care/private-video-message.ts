@@ -10,11 +10,12 @@ import {
   signal,
   untracked,
 } from "@angular/core";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { ButtonModule } from "primeng/button";
 import { AdminApiService } from "../api.service";
 import { CareService, Thread } from "./care.service";
 import { Conversation } from "./conversation";
+import { RehabModule } from "../store";
 
 @Component({
   selector: "app-private-video-message",
@@ -44,7 +45,8 @@ import { Conversation } from "./conversation";
           }}
         </p>
       </header>
-      <div class="max-w-5xl space-y-6">
+      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
+        <div class="min-w-0 space-y-6">
         <section [attr.aria-label]="care.t('Video', 'Vidéo')">
           @if (videoUrl(); as url) {
             <video
@@ -105,6 +107,43 @@ import { Conversation } from "./conversation";
           </h2>
           <app-care-conversation [threadId]="current.id" />
         </section>
+        </div>
+        <aside class="surface min-w-0 p-5 lg:sticky lg:top-6" aria-labelledby="module-videos-title">
+          <h2 id="module-videos-title" class="text-lg font-medium">
+            {{ care.t('Module videos', 'Vidéos du module') }}
+          </h2>
+          <p class="mt-2 text-sm text-muted">
+            {{ care.t('Private comments for ', 'Commentaires privés pour ') }}{{ current.clientName }}
+          </p>
+          @if (moduleLoading()) {
+            <p role="status" class="mt-4 text-sm text-muted">{{ care.t('Loading module…', 'Chargement du module…') }}</p>
+          } @else if (module(); as group) {
+            <h3 class="mt-5 font-medium">{{ group.name }}</h3>
+            <nav class="mt-3 space-y-2" [attr.aria-label]="group.name">
+              @for (exercise of group.exercises; track exercise.id; let index = $index) {
+                <button pButton text type="button" class="w-full !justify-start !text-left"
+                  [class.bg-brand-soft]="exercise.clientExerciseId === current.videoId"
+                  [attr.aria-current]="exercise.clientExerciseId === current.videoId ? 'page' : null"
+                  [disabled]="navigating() || !exercise.clientExerciseId || exercise.clientExerciseId === current.videoId"
+                  (click)="openVideo(exercise.clientExerciseId!)">
+                  <span class="mr-3 text-sm text-muted">{{ index + 1 }}</span>
+                  <span class="min-w-0 break-words text-sm">{{ exercise.name }}</span>
+                </button>
+              }
+            </nav>
+          } @else {
+            <p class="mt-4 text-sm text-muted">{{ care.t('No published module is available for this video.', 'Aucun module publié n’est disponible pour cette vidéo.') }}</p>
+          }
+          @if (navigationError()) {
+            <p role="alert" class="mt-4 text-sm text-red-700">{{ navigationError() }}</p>
+            @if (!module()) {
+              <button pButton text type="button" (click)="retryModule()">{{ care.t('Retry', 'Réessayer') }}</button>
+            }
+          }
+          @if (navigating()) {
+            <p role="status" class="mt-4 text-sm text-muted">{{ care.t('Opening video…', 'Ouverture de la vidéo…') }}</p>
+          }
+        </aside>
       </div>
     } @else if (loading()) {
       <p role="status" class="surface p-8 text-sm text-muted">
@@ -127,6 +166,11 @@ export class PrivateVideoMessage {
   readonly threadId = input.required<string>();
   readonly care = inject(CareService);
   private readonly api = inject(AdminApiService);
+  private readonly router = inject(Router);
+  readonly module = signal<RehabModule | null>(null);
+  readonly moduleLoading = signal(false);
+  readonly navigating = signal(false);
+  readonly navigationError = signal("");
   readonly thread = signal<Thread | null>(null);
   readonly loading = signal(false);
   readonly error = signal("");
@@ -160,6 +204,9 @@ export class PrivateVideoMessage {
     const id = this.threadId();
     this.controller?.abort();
     this.thread.set(null);
+    this.module.set(null);
+    this.navigationError.set("");
+    this.navigating.set(false);
     this.videoUrl.set("");
     this.videoError.set(false);
     this.loading.set(true);
@@ -171,6 +218,7 @@ export class PrivateVideoMessage {
       if (generation !== this.generation) return;
       this.thread.set(thread);
       void this.loadVideo(thread, generation);
+      void this.loadModule(thread, generation);
     } catch (error) {
       if (generation === this.generation)
         this.error.set(this.care.error(error));
@@ -182,6 +230,45 @@ export class PrivateVideoMessage {
   retryVideo(): void {
     const thread = this.thread();
     if (thread) void this.loadVideo(thread, this.generation);
+  }
+
+  retryModule(): void {
+    const thread = this.thread();
+    if (thread) void this.loadModule(thread, this.generation);
+  }
+
+  private async loadModule(thread: Thread, generation: number): Promise<void> {
+    this.moduleLoading.set(true);
+    this.navigationError.set("");
+    try {
+      const modules = await this.api.listModules();
+      if (generation !== this.generation) return;
+      this.module.set(modules.find((group) => group.status === 'Published' &&
+        group.exercises.some((exercise) => exercise.clientExerciseId === thread.videoId)) ?? null);
+    } catch {
+      if (generation === this.generation)
+        this.navigationError.set(this.care.t('Could not load the module videos.', 'Impossible de charger les vidéos du module.'));
+    } finally {
+      if (generation === this.generation) this.moduleLoading.set(false);
+    }
+  }
+
+  async openVideo(videoId: string): Promise<void> {
+    const current = this.thread();
+    if (!current || this.navigating() || videoId === current.videoId) return;
+    const generation = this.generation;
+    this.navigating.set(true);
+    this.navigationError.set("");
+    try {
+      const target = await this.care.request<Thread>(
+        '/threads/' + encodeURIComponent(current.id) + '/videos', 'POST', { videoId });
+      if (generation !== this.generation) return;
+      await this.router.navigate(['/messages', target.id, 'video']);
+    } catch (failure) {
+      if (generation === this.generation) this.navigationError.set(this.care.error(failure));
+    } finally {
+      if (generation === this.generation) this.navigating.set(false);
+    }
   }
 
   private async loadVideo(thread: Thread, generation: number): Promise<void> {
