@@ -36,6 +36,7 @@ export interface Thread {
   updatedAt: number;
 }
 export interface CareMessage {
+  senderName?: string;
   id: string;
   body: string;
   senderRole: string;

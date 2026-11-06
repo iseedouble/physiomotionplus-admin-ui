@@ -74,9 +74,8 @@ import { CareService, CareError, CareMessage } from "./care.service";
           >
             <p class="mb-1 text-xs font-medium">
               {{
-                message.senderRole === "physio"
-                  ? care.t("Physio", "Physiothérapeute")
-                  : care.t("Client", "Client")
+                message.senderName ||
+                  care.t("Name unavailable", "Nom indisponible")
               }}
               · <time>{{ message.createdAt | date: "short" }}</time>
             </p>
