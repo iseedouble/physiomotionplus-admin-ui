@@ -133,8 +133,6 @@ export class CareService {
   announceUpdate(force = false): void {
     // The open streams already deliver these updates; avoid duplicate REST reloads.
     if (this.streams.size > 0) return;
-    // The open streams already deliver these updates; avoid duplicate REST reloads.
-    if (this.streams.size > 0) return;
     const now = Date.now();
     if (!force && now - this.lastUpdateAt < 1000) return;
     this.lastUpdateAt = now;
