@@ -12,6 +12,7 @@ import { FormsModule } from "@angular/forms";
 import { RouterLink } from "@angular/router";
 import { ButtonModule } from "primeng/button";
 import { InputTextModule } from "primeng/inputtext";
+import { DialogModule } from "primeng/dialog";
 import { CareService, Connection, Physio, Thread } from "./care.service";
 import { Conversation } from "./conversation";
 
@@ -21,6 +22,7 @@ import { Conversation } from "./conversation";
     FormsModule,
     ButtonModule,
     InputTextModule,
+    DialogModule,
     Conversation,
     RouterLink,
   ],
@@ -42,7 +44,13 @@ export class CareWorkspace {
   readonly busy = signal(false);
   readonly status = signal("");
   readonly selected = signal<Thread | null>(null);
-  readonly confirmEnd = signal("");
+  readonly clientToDelete = signal<Connection | null>(null);
+  readonly deleteError = signal("");
+  readonly clients = computed(() =>
+    this.care
+      .connections()
+      .filter((c) => c.status === "pending" || c.status === "active"),
+  );
   readonly directoryMore = signal(false);
   readonly moreConnections = signal(false);
   readonly moreThreads = signal(false);
@@ -75,6 +83,7 @@ export class CareWorkspace {
       const user = this.care.auth.user();
       const generation = ++this.generation;
       this.selected.set(null);
+      this.clientToDelete.set(null);
       this.error.set("");
       this.directory.set([]);
       this.inviteUrl.set("");
@@ -205,8 +214,25 @@ export class CareWorkspace {
     void this.run(async () => {
       await this.care.request("/connections/" + id, "PATCH", { status });
       await this.refreshSummary();
-      this.confirmEnd.set("");
     });
+  }
+  async deleteClient(): Promise<void> {
+    const client = this.clientToDelete();
+    if (!client || this.busy()) return;
+    this.busy.set(true);
+    this.deleteError.set("");
+    try {
+      await this.care.request("/connections/" + client.id, "PATCH", {
+        status: "ended",
+      });
+      this.clientToDelete.set(null);
+      await this.refreshSummary();
+      this.notice.set(this.care.t("Client removed.", "Client supprimé."));
+    } catch (failure) {
+      this.deleteError.set(this.care.error(failure));
+    } finally {
+      this.busy.set(false);
+    }
   }
   saveProfile() {
     void this.run(async () => {

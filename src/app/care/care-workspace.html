@@ -168,9 +168,9 @@
   } }
   <section class="surface space-y-4 p-5">
     <h2 class="text-xl font-medium">
-      {{ care.t('Connections and requests', 'Connexions et demandes') }}
+      {{ care.t('Clients', 'Clients') }}
     </h2>
-    @for (connection of care.connections(); track connection.id) {
+    @for (connection of clients(); track connection.id) {
     <article
       class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line p-4"
     >
@@ -198,40 +198,24 @@
         >
           {{ care.t('Decline', 'Refuser') }}
         </button>
-        } @if ( connection.status === 'active' || (!care.isPhysio &&
-        connection.status === 'pending') ) { @if (confirmEnd() ===
-        connection.id) {
-        <span class="text-sm"
-          >{{ care.t( 'Close this connection and its conversations?', 'Fermer
-          cette connexion et ses conversations ?' ) }}</span
-        ><button
-          pButton
-          severity="danger"
-          type="button"
-          [disabled]="busy()"
-          (click)="decide(connection.id, 'ended')"
-        >
-          {{ care.t('Confirm', 'Confirmer') }}</button
-        ><button pButton text type="button" (click)="confirmEnd.set('')">
-          {{ care.t('Keep connection', 'Conserver') }}
-        </button>
-        } @else {
+        } @if (connection.status === 'active') {
         <button
           pButton
           text
           severity="danger"
           type="button"
           [disabled]="busy()"
-          (click)="confirmEnd.set(connection.id)"
+          [attr.aria-label]="care.t('Delete client: ', 'Supprimer le client : ') + connection.clientName"
+          (click)="deleteError.set(''); clientToDelete.set(connection)"
         >
-          {{ care.t('End connection', 'Terminer la connexion') }}
+          {{ care.t('Delete', 'Supprimer') }}
         </button>
-        } }
+        }
       </div>
     </article>
     } @empty {
     <p class="text-sm text-muted">
-      {{ care.t('No connections yet.', 'Aucune connexion pour le moment.') }}
+      {{ care.t('No clients yet.', 'Aucun client pour le moment.') }}
     </p>
     } @if (moreConnections()) {
     <button
@@ -241,7 +225,7 @@
       [disabled]="busy()"
       (click)="olderConnections()"
     >
-      {{ care.t('Load more connections', 'Charger d’autres connexions') }}
+      {{ care.t('Load more clients', 'Charger d’autres clients') }}
     </button>
     }
   </section>
@@ -312,3 +296,37 @@
     </div>
   </section>
 </div>
+
+<p-dialog
+  [header]="care.t('Delete client?', 'Supprimer le client ?')"
+  [visible]="!!clientToDelete()"
+  (visibleChange)="!$event && !busy() && clientToDelete.set(null)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!busy()"
+  [closeOnEscape]="!busy()"
+  [dismissableMask]="false"
+  [closeAriaLabel]="care.t('Cancel', 'Annuler')"
+  [style]="{ width: '30rem', maxWidth: 'calc(100vw - 2rem)' }"
+>
+  @if (clientToDelete(); as client) {
+  <p class="leading-relaxed">
+    {{ care.t('Remove ', 'Retirer ') }}<strong>{{ client.clientName }}</strong>{{ care.t(' from your clients? This client will no longer be able to communicate with you through private video comments.', ' de votre liste de clients ? Ce client ne pourra plus communiquer avec vous dans les commentaires privés des vidéos.') }}
+  </p>
+  <p class="mt-3 text-sm text-muted">
+    {{ care.t('Their account and existing messages will be kept.', 'Son compte et les messages existants seront conservés.') }}
+  </p>
+  @if (deleteError()) {
+  <p role="alert" class="mt-4 text-sm text-red-700">{{ deleteError() }}</p>
+  }
+  }
+  <ng-template #footer>
+    <button pButton outlined type="button" [disabled]="busy()" (click)="clientToDelete.set(null)">
+      {{ care.t('Cancel', 'Annuler') }}
+    </button>
+    <button pButton severity="danger" type="button" [loading]="busy()" [disabled]="busy()" (click)="deleteClient()">
+      {{ care.t('Delete client', 'Supprimer le client') }}
+    </button>
+  </ng-template>
+</p-dialog>
