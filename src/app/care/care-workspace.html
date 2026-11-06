@@ -69,6 +69,7 @@
       </button>
     </form>
   </section>
+  @if (invitationsEnabled) {
   <section class="surface space-y-4 p-5">
     <h2 class="text-xl font-medium">
       {{ care.t('Invite a client', 'Inviter un client') }}
@@ -105,6 +106,7 @@
     </div>
     }
   </section>
+  }
   } @else { @if (invitation()) {
   <section class="surface space-y-3 p-5">
     <h2 class="font-semibold">

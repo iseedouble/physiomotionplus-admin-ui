@@ -31,6 +31,8 @@ import { Conversation } from "./conversation";
 })
 export class CareWorkspace {
   readonly care = inject(CareService);
+  // Keep invitations hidden until outbound email delivery is configured.
+  readonly invitationsEnabled = false;
   private readonly conversation = viewChild(Conversation);
   readonly directory = signal<Physio[]>([]);
   readonly profileName = signal("");
