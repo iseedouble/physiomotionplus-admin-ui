@@ -65,6 +65,13 @@ export class CareService {
   private pushWork: Promise<unknown> = Promise.resolve();
   private foregroundStop?: () => void;
   private readonly streams = new Set<AbortController>();
+  private readonly liveTab = (() => {
+    try {
+      const id = sessionStorage.getItem('care-live-tab') ?? crypto.randomUUID();
+      sessionStorage.setItem('care-live-tab', id);
+      return id;
+    } catch { return crypto.randomUUID(); }
+  })();
   constructor() {
     const refreshOnReturn = () => {
       if (document.visibilityState === "visible" && this.owner)
@@ -124,6 +131,8 @@ export class CareService {
   }
   private lastUpdateAt = 0;
   announceUpdate(force = false): void {
+    // The open streams already deliver these updates; avoid duplicate REST reloads.
+    if (this.streams.size > 0) return;
     const now = Date.now();
     if (!force && now - this.lastUpdateAt < 1000) return;
     this.lastUpdateAt = now;
@@ -222,7 +231,22 @@ export class CareService {
     const user = firebaseAuth.currentUser;
     const controller = new AbortController();
     this.streams.add(controller);
-    let delay = 1000;
+    // Stable slots replace abandoned requests after navigation/HMR rather than accumulating.
+    const subscription = this.liveTab + (thread ? '-conversation' : '-workspace');
+    let lease = '';
+    let bearer = '';
+    let failures = 0;
+    let delay = 5000;
+    const release = () => {
+      if (!lease || !bearer) return;
+      const query = new URLSearchParams({ subscription, lease });
+      lease = '';
+      void fetch(this.base + '/events?' + query, {
+        method: 'DELETE', headers: { Authorization: 'Bearer ' + bearer },
+        keepalive: true,
+      }).catch(() => {});
+    };
+    controller.signal.addEventListener('abort', release, { once: true });
     const pause = () =>
       new Promise<void>((resolve) => {
         const done = () => {
@@ -255,10 +279,11 @@ export class CareService {
             },
           );
           if (!response.ok) {
+            lease = '';
             const details = (await response.json().catch(() => null)) as {
               message?: string;
             } | null;
-            if ([400, 401, 403, 404].includes(response.status)) {
+            if ([400, 401, 403, 404, 429].includes(response.status)) {
               status(
                 this.error(
                   new CareError(response.status, details?.message ?? ""),
@@ -320,11 +345,17 @@ export class CareService {
           if (!controller.signal.aborted)
             status(this.t("Reconnecting…", "Reconnexion…"));
         }
+        release();
         if (!controller.signal.aborted) {
+          if (++failures >= 3) {
+            status(this.t('Live updates paused. Use Refresh or reopen this page.', 'Mises à jour en direct suspendues. Actualisez ou rouvrez cette page.'));
+            break;
+          }
           await pause();
-          delay = Math.min(delay * 2, 30000);
+          delay = Math.min(delay * 3, 60000);
         }
       }
+      release();
       this.streams.delete(controller);
     };
     void connect();
