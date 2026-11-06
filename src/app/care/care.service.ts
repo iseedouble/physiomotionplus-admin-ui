@@ -23,6 +23,11 @@ export interface Connection {
   updatedAt: number;
 }
 export interface Thread {
+  videoId: string;
+  sequence?: number;
+  lastMessagePreview?: string;
+  lastMessageSenderRole?: string;
+  lastMessageAt?: number;
   id: string;
   connectionId: string;
   title: string;

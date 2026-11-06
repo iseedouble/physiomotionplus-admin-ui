@@ -1,0 +1,200 @@
+<div class="space-y-6">
+  <header class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-widest text-sage">
+        {{ care.t('Your practice', 'Votre pratique') }}
+      </p>
+      <h1 class="mt-2 text-3xl font-medium">
+        {{ care.t('Messages', 'Messages') }}
+      </h1>
+      <p class="mt-2 text-sm text-muted">
+        {{ care.t('Private comments from your clients. Refresh to check for new
+        messages.', 'Les commentaires privés de vos clients. Actualisez pour
+        voir les nouveaux messages.') }}
+      </p>
+    </div>
+    <button
+      pButton
+      outlined
+      type="button"
+      icon="pi pi-refresh"
+      [label]="care.t('Refresh', 'Actualiser')"
+      [disabled]="loading()"
+      [loading]="loading()"
+      (click)="load()"
+    ></button>
+  </header>
+  @if (error()) {
+  <p
+    role="alert"
+    class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+  >
+    {{ error() }}
+  </p>
+  }
+  <div
+    class="grid min-w-0 gap-5 min-[1100px]:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]"
+  >
+    <section
+      class="surface min-w-0 overflow-hidden min-[1100px]:block"
+      [class.hidden]="!!selected()"
+      aria-labelledby="inbox-conversations"
+    >
+      <div class="space-y-3 border-b border-line p-5">
+        <h2 id="inbox-conversations" class="font-semibold">
+          {{ care.t('Conversations', 'Conversations') }}
+        </h2>
+        <label class="sr-only" for="inbox-search"
+          >{{ care.t('Search messages', 'Rechercher des messages') }}</label
+        >
+        <input
+          pInputText
+          id="inbox-search"
+          class="w-full"
+          type="search"
+          [placeholder]="care.t('Search client or video', 'Rechercher un client ou une vidéo')"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+        />
+      </div>
+      <div
+        class="max-h-[65dvh] overflow-y-auto p-2"
+        [attr.aria-busy]="loading()"
+      >
+        @for (thread of visible(); track thread.id) {
+        <button
+          type="button"
+          class="flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+          [class.bg-brand-tint]="selectedId() === thread.id"
+          [class.border-sage]="selectedId() === thread.id"
+          [class.border-transparent]="selectedId() !== thread.id"
+          [attr.aria-pressed]="selectedId() === thread.id"
+          (click)="selectedId.set(thread.id)"
+        >
+          <span
+            class="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-forest"
+            aria-hidden="true"
+            >{{ initials(thread.clientName) }}</span
+          >
+          <span class="min-w-0 flex-1">
+            <span
+              class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
+            >
+              <span class="truncate text-sm font-semibold"
+                >{{ thread.clientName }}</span
+              >
+              <time class="text-[10px] text-muted"
+                >{{ (thread.lastMessageAt || thread.updatedAt) | date:'short'
+                }}</time
+              >
+            </span>
+            <span class="mt-1 block truncate text-xs font-medium text-sage"
+              ><i class="pi pi-video mr-1" aria-hidden="true"></i>{{
+              thread.title }}</span
+            >
+            <span
+              class="mt-1 block line-clamp-2 break-words text-sm text-muted"
+            >
+              @if (thread.lastMessageSenderRole === 'physio') { {{ care.t('You:
+              ', 'Vous : ') }} } {{ thread.lastMessagePreview || care.t('Open
+              this video conversation.', 'Ouvrir cette conversation sur la
+              vidéo.') }}
+            </span>
+          </span>
+        </button>
+        } @empty {
+        <p role="status" class="p-5 text-sm leading-6 text-muted">
+          {{ loading() ? care.t('Loading messages…', 'Chargement des messages…')
+          : search() ? care.t('No matching conversations.', 'Aucune conversation
+          correspondante.') : care.t('No video comments yet. Client comments
+          will appear here after you refresh.', 'Aucun commentaire sur les
+          vidéos pour le moment. Les commentaires apparaîtront ici après
+          actualisation.') }}
+        </p>
+        }
+      </div>
+      @if (cursor()) {
+      <div class="border-t border-line p-3">
+        <button
+          pButton
+          text
+          type="button"
+          [disabled]="loading()"
+          (click)="load(true)"
+        >
+          {{ care.t('Load older conversations', 'Charger les conversations
+          précédentes') }}
+        </button>
+      </div>
+      }
+    </section>
+    <section
+      class="surface min-w-0 p-6 sm:p-8 min-[1100px]:block"
+      [class.hidden]="!selected()"
+      aria-live="polite"
+      aria-labelledby="message-context"
+    >
+      @if (selected(); as thread) {
+      <button
+        pButton
+        text
+        type="button"
+        class="mb-5 min-[1100px]:hidden"
+        icon="pi pi-arrow-left"
+        [label]="care.t('Back to conversations', 'Retour aux conversations')"
+        (click)="selectedId.set('')"
+      ></button>
+      <span
+        class="flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-forest"
+        ><i class="pi pi-comment text-xl" aria-hidden="true"></i
+      ></span>
+      <p class="mt-6 text-xs font-semibold uppercase tracking-widest text-sage">
+        {{ care.t('Video conversation', 'Conversation sur une vidéo') }}
+      </p>
+      <h2 id="message-context" class="mt-2 break-words text-2xl font-medium">
+        {{ thread.clientName }}
+      </h2>
+      <p class="mt-4 text-sm leading-7 text-muted">
+        {{ care.t('You have a comment on this video:', 'Vous avez un commentaire
+        sur cette vidéo :') }}
+      </p>
+      <div class="mt-4 rounded-xl border border-line bg-canvas p-5">
+        <p class="flex items-start gap-3 font-medium">
+          <i class="pi pi-video mt-1 text-sage" aria-hidden="true"></i>{{
+          thread.title }}
+        </p>
+        <p class="mt-2 text-xs text-muted">
+          {{ care.t('Last message', 'Dernier message') }} · {{
+          (thread.lastMessageAt || thread.updatedAt) | date:'short' }}
+        </p>
+      </div>
+      <a
+        pButton
+        [routerLink]="['/messages', thread.id, 'video']"
+        fragment="comments"
+        class="mt-6 inline-flex justify-center gap-2"
+        ><i class="pi pi-arrow-up-right" aria-hidden="true"></i>{{ care.t('Open
+        video and comment', 'Ouvrir la vidéo et le commentaire') }}</a
+      >
+      <p class="mt-4 text-xs leading-6 text-muted">
+        {{ care.t('Only you and this client can see the conversation.', 'Cette
+        conversation est visible uniquement par vous et ce client.') }}
+      </p>
+      } @else {
+      <div
+        class="flex min-h-64 flex-col items-center justify-center text-center"
+      >
+        <i class="pi pi-comments text-3xl text-sage" aria-hidden="true"></i>
+        <h2 id="message-context" class="mt-4 text-xl font-medium">
+          {{ care.t('Select a message', 'Sélectionnez un message') }}
+        </h2>
+        <p class="mt-3 max-w-sm text-sm leading-6 text-muted">
+          {{ care.t('Choose a client conversation to see which video their
+          comment is about.', 'Choisissez une conversation pour voir sur quelle
+          vidéo porte le commentaire du client.') }}
+        </p>
+      </div>
+      }
+    </section>
+  </div>
+</div>
