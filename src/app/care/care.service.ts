@@ -133,6 +133,8 @@ export class CareService {
   announceUpdate(force = false): void {
     // The open streams already deliver these updates; avoid duplicate REST reloads.
     if (this.streams.size > 0) return;
+    // The open streams already deliver these updates; avoid duplicate REST reloads.
+    if (this.streams.size > 0) return;
     const now = Date.now();
     if (!force && now - this.lastUpdateAt < 1000) return;
     this.lastUpdateAt = now;
@@ -251,30 +253,29 @@ export class CareService {
       new Promise<void>((resolve) => {
         const done = () => {
           clearTimeout(timer);
-          controller.signal.removeEventListener("abort", done);
+          controller.signal.removeEventListener('abort', done);
           resolve();
         };
         const timer = setTimeout(done, delay + Math.random() * 300);
-        controller.signal.addEventListener("abort", done, { once: true });
+        controller.signal.addEventListener('abort', done, { once: true });
       });
     const connect = async () => {
-      while (
-        user &&
-        !controller.signal.aborted &&
-        firebaseAuth.currentUser?.uid === user.uid
-      ) {
+      while (user && !controller.signal.aborted && firebaseAuth.currentUser?.uid === user.uid) {
         try {
-          status(this.t("Connecting…", "Connexion…"));
+          status(this.t('Connecting…', 'Connexion…'));
+          bearer = await user.getIdToken();
+          if (controller.signal.aborted) break;
+          lease = crypto.randomUUID();
+          const query = new URLSearchParams({ subscription, lease });
+          if (thread) query.set('thread', thread);
           const response = await fetch(
-            this.base +
-              "/events" +
-              (thread ? "?thread=" + encodeURIComponent(thread) : ""),
+            this.base + '/events?' + query,
             {
               headers: {
-                Authorization: "Bearer " + (await user.getIdToken()),
-                Accept: "text/event-stream",
+                Authorization: 'Bearer ' + bearer,
+                Accept: 'text/event-stream, application/json',
               },
-              cache: "no-store",
+              cache: 'no-store',
               signal: controller.signal,
             },
           );
@@ -284,44 +285,37 @@ export class CareService {
               message?: string;
             } | null;
             if ([400, 401, 403, 404, 429].includes(response.status)) {
-              status(
-                this.error(
-                  new CareError(response.status, details?.message ?? ""),
-                ),
-              );
-              receive("closed", null);
+              status(this.error(new CareError(response.status, details?.message ?? '')));
+              if (response.status !== 429) receive('closed', null);
               break;
             }
             throw new CareError(response.status);
           }
-          if (!response.body) throw new Error("Stream unavailable");
-          const reader = response.body
-            .pipeThrough(new TextDecoderStream())
-            .getReader();
-          let buffer = "";
+          if (!response.body) throw new Error('Stream unavailable');
+          const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+          let buffer = '';
           try {
             while (!controller.signal.aborted) {
               const { value, done } = await reader.read();
               if (done) break;
-              buffer += value.replace(/\r/g, "");
+              buffer += value.replace(/\r/g, '');
               let split: number;
-              while ((split = buffer.indexOf("\n\n")) >= 0) {
+              while ((split = buffer.indexOf('\n\n')) >= 0) {
                 const frame = buffer.slice(0, split);
                 buffer = buffer.slice(split + 2);
-                const lines = frame.split("\n");
+                const lines = frame.split('\n');
                 const event = lines
-                  .find((line) => line.startsWith("event:"))
+                  .find((line) => line.startsWith('event:'))
                   ?.slice(6)
                   .trim();
                 const payload = lines
-                  .filter((line) => line.startsWith("data:"))
+                  .filter((line) => line.startsWith('data:'))
                   .map((line) => line.slice(5).trimStart())
-                  .join("\n");
-                if (event === "stream-error")
-                  throw new Error("Live updates unavailable");
-                if (event === "closed") {
-                  receive("closed", null);
-                  status(this.t("Connection ended.", "Connexion terminée."));
+                  .join('\n');
+                if (event === 'stream-error') throw new Error('Live updates unavailable');
+                if (event === 'closed') {
+                  receive('closed', null);
+                  status(this.t('Connection ended.', 'Connexion terminée.'));
                   controller.abort();
                   break;
                 }
@@ -331,9 +325,9 @@ export class CareService {
                   firebaseAuth.currentUser?.uid === user.uid &&
                   !controller.signal.aborted
                 ) {
-                  if (event !== "ready") delay = 1000;
-                  status(this.t("Live", "En direct"));
-                  if (event !== "ready" && event !== "heartbeat")
+                  if (event === 'heartbeat') { failures = 0; delay = 5000; }
+                  status(this.t('Live', 'En direct'));
+                  if (event !== 'ready' && event !== 'heartbeat')
                     receive(event, JSON.parse(payload));
                 }
               }
@@ -342,8 +336,7 @@ export class CareService {
             await reader.cancel().catch(() => {});
           }
         } catch {
-          if (!controller.signal.aborted)
-            status(this.t("Reconnecting…", "Reconnexion…"));
+          if (!controller.signal.aborted) status(this.t('Reconnecting…', 'Reconnexion…'));
         }
         release();
         if (!controller.signal.aborted) {
